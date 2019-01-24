@@ -41,6 +41,7 @@ void IRQHandler_FlexIO1() {
 		if (*ppfhc) {
 			if ((*ppfhc)->call_back(&flexIO1)) return;
 		}
+		ppfhc++;
 	}
 	flexIO1.IRQHandler();
 }

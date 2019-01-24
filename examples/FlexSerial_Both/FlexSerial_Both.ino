@@ -1,11 +1,14 @@
 #include <FlexIO_t4.h>
-#include "flexSerial.h"
+#include <flexSerial.h>
 
-FlexSerial SerialFlex(-1, 2); // currently setup for pin 2 TX
+FlexSerial SerialFlex(3, 2); // currently setup for pin 2 TX
 
 
 void setup() {
   pinMode(13, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
   while (!Serial && millis() < 4000);
   Serial.begin(115200);
   Serial1.begin(115200);  // lets start up Serial1, to see if we can receive anything from our FlexSerial
@@ -26,7 +29,7 @@ void loop() {
   }
   if (Serial1.available()) {
     while ((ch = Serial1.read()) != -1) {
-      SerialFlex.write(ch);
+      Serial1.write(ch);
     }
   }
 
@@ -35,6 +38,4 @@ void loop() {
       Serial.write(ch);
     }
   }
-  delay(500);
-
 }

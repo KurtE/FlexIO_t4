@@ -32,8 +32,6 @@
 
 
 
-//#define DEBUG_FlexSerial
-
 class FlexSerial : public Stream, public FlexIOHandlerCallback
 {
 public:

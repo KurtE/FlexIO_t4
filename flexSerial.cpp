@@ -2,6 +2,10 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
+//#define DEBUG_FlexSerial
+//#define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
+#define DEBUG_digitalWriteFast(pin, state) 
+
 //=============================================================================
 // FlexSerial::Begin
 //=============================================================================
@@ -114,7 +118,7 @@ bool FlexSerial::begin(uint32_t baud) {
 		                          FLEXIO_TIMCFG_TIMENA(4) | FLEXIO_TIMCFG_TIMDIS(2) |
 		                          FLEXIO_TIMCFG_TIMRST(4) | FLEXIO_TIMCFG_TIMOUT(2); //0x204_2422
 
-		p->TIMCTL[_rx_timer] = FLEXIO_TIMCTL_TIMOD(1) | FLEXIO_TIMCTL_PINPOL;  // 0x0000_0081;
+		p->TIMCTL[_rx_timer] = FLEXIO_TIMCTL_TIMOD(1) | FLEXIO_TIMCTL_PINPOL | FLEXIO_TIMCTL_PINSEL(_rx_flex_pin);;  // 0x0000_0081;
 		p->CTRL = FLEXIO_CTRL_FLEXEN;									// make sure it is enabled. 
 		//p->SHIFTSTAT = _rx_shifter_mask;   // Clear out the status.
 
@@ -248,10 +252,12 @@ int FlexSerial::availableForWrite(void) {
 
 
 bool FlexSerial::call_back (FlexIOHandler *pflex) {
+	DEBUG_digitalWriteFast(4, HIGH);
 	// check for RX
 	if (pflex == _rx_pflex) {
 		if (_rx_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
-			uint8_t c = _rx_pflex->port().SHIFTBUF[_rx_shifter];
+			DEBUG_digitalWriteFast(5, HIGH);
+			uint8_t c = _rx_pflex->port().SHIFTBUFBYS[_rx_shifter] & 0xff;
 			uint32_t head;
 			head = _rx_buffer_head;
 			if (++head >= RX_BUFFER_SIZE) head = 0;
@@ -260,12 +266,14 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 				_rx_buffer[_rx_buffer_head] = c;
 				_rx_buffer_head = head;
 			}
+			DEBUG_digitalWriteFast(5, LOW);
 		}
 	}
 
 	// See if we we have a TX event
 	if (pflex == _tx_pflex) {
-		if (_tx_pflex->port().SHIFTSTAT & _tx_shifter_mask) {
+		if ((_tx_pflex->port().SHIFTSTAT & _tx_shifter_mask) && (_tx_pflex->port().SHIFTSIEN & _tx_shifter_mask)) {
+			DEBUG_digitalWriteFast(6, HIGH);
 			if (_tx_buffer_head != _tx_buffer_tail) {
 				_tx_pflex->port().SHIFTBUF[_tx_shifter] = _tx_buffer[_tx_buffer_tail++] ;
 				if (_tx_buffer_tail >= TX_BUFFER_SIZE) _tx_buffer_tail = 0;
@@ -273,7 +281,9 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 			if (_tx_buffer_head == _tx_buffer_tail) {
 				_tx_pflex->port().SHIFTSIEN &= ~_tx_shifter_mask;  // disable interrupt on this one...
 			}
+			DEBUG_digitalWriteFast(6, LOW);
 		}
 	}
+	DEBUG_digitalWriteFast(4, LOW);
 	return false;  // right now always return false... 
 }
