@@ -44,6 +44,7 @@ void IRQHandler_FlexIO1() {
 		ppfhc++;
 	}
 	flexIO1.IRQHandler();
+	 asm("dsb");
 }
 
 
@@ -55,6 +56,7 @@ void IRQHandler_FlexIO2() {
 		}
 	}
 	flexIO2.IRQHandler();
+	 asm("dsb");
 }
 
 
@@ -94,9 +96,10 @@ bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
 
 // TODO: Get count of timers/shifters/buffers out of object...
 // Also handle cnt > 1...
+// Currently lets support 1 or 2.
 uint8_t FlexIOHandler::requestTimers(uint8_t cnt) {
-  uint8_t mask = 0x1;
-  for (uint8_t i = 0; i < 4; i++) {
+  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+  for (uint8_t i = 0; i < (5-cnt); i++) {
     if (!(_used_timers & mask)) {
       _used_timers |= mask;
       return i;
@@ -107,8 +110,8 @@ uint8_t FlexIOHandler::requestTimers(uint8_t cnt) {
 }
 
 uint8_t FlexIOHandler::requestShifters(uint8_t cnt) {
-  uint8_t mask = 0x1;
-  for (uint8_t i = 0; i < 4; i++) {
+  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+  for (uint8_t i = 0; i < (5-cnt); i++) {
     if (!(_used_shifters & mask)) {
       _used_shifters |= mask;
       return i;
@@ -117,29 +120,21 @@ uint8_t FlexIOHandler::requestShifters(uint8_t cnt) {
   }
   return 0xff;
 }
-uint8_t FlexIOHandler::requestBuffers(uint8_t cnt) {
-  uint8_t mask = 0x1;
-  for (uint8_t i = 0; i < 4; i++) {
-    if (!(_used_buffers & mask)) {
-      _used_buffers |= mask;
-      return i;
-    }
-    mask <<= 1;
-  }
-  return 0xff;
-}
+
 void FlexIOHandler::IRQHandler() {
   
 }
 
 void FlexIOHandler::freeTimers(uint8_t n, uint8_t cnt) {
+  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+  for (;n < 0; n--) mask <<= 1;
+  _used_timers &= ~mask;
 }
 
 void FlexIOHandler::freeShifters(uint8_t n, uint8_t cnt) {
-
-}
-
-void FlexIOHandler::freeBuffers(uint8_t n, uint8_t cnt) {
+  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+  for (;n < 0; n--) mask <<= 1;
+  _used_shifters &= ~mask;
 }
 
 bool FlexIOHandler::addIOHandlerCallback(FlexIOHandlerCallback *callback) {

@@ -111,11 +111,9 @@ public:
 
 	uint8_t requestTimers(uint8_t cnt=1);
 	uint8_t requestShifters(uint8_t cnt=1);
-	uint8_t requestBuffers(uint8_t cnt=1);
 
 	void freeTimers(uint8_t n, uint8_t cnt=1);
 	void freeShifters(uint8_t n, uint8_t cnt=1);
-	void freeBuffers(uint8_t n, uint8_t cnt=1);
 
 	bool setIOPinToFlexMode(uint8_t pin);
 	bool addIOHandlerCallback(FlexIOHandlerCallback *callback);
@@ -129,7 +127,6 @@ protected:
 	uintptr_t		_callback_list_addr;
 	uint8_t         _used_timers = 0;
 	uint8_t         _used_shifters = 0;
-	uint8_t         _used_buffers = 0;
 	bool			_irq_initialized = false;
   
 };
