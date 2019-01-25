@@ -65,22 +65,22 @@ FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex
 {
   FlexIOHandler *pflex = nullptr;
 
-  for (uint8_t iflex = 0; iflex < (sizeof(flex_list) / sizeof(flex_list[0])); iflex++) {
-    pflex = flex_list[iflex];
+	for (uint8_t iflex = 0; iflex < (sizeof(flex_list) / sizeof(flex_list[0])); iflex++) {
+		pflex = flex_list[iflex];
 
-    for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
-      if (pflex->hardware().io_pin[i] == pin) {
-        flex_pin = pflex->hardware().flex_pin[i];
-#ifdef DEBUG_FlexIO
-  		Serial.println("Enable flexio clock");
-#endif
-  		pflex->hardware().clock_gate_register |= pflex->hardware().clock_gate_mask;
-        return pflex;
-      }
-    }
-  }
-  flex_pin = 0xff;
-  return nullptr;
+		for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
+	  		if (pflex->hardware().io_pin[i] == pin) {
+	    		flex_pin = pflex->hardware().flex_pin[i];
+				#ifdef DEBUG_FlexIO
+				Serial.println("Enable flexio clock");
+				#endif
+				pflex->hardware().clock_gate_register |= pflex->hardware().clock_gate_mask;
+	    		return pflex;
+	  		}
+		}
+	}
+	flex_pin = 0xff;
+	return nullptr;
 }
 
 bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
@@ -98,27 +98,27 @@ bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
 // Also handle cnt > 1...
 // Currently lets support 1 or 2.
 uint8_t FlexIOHandler::requestTimers(uint8_t cnt) {
-  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
-  for (uint8_t i = 0; i < (5-cnt); i++) {
-    if (!(_used_timers & mask)) {
-      _used_timers |= mask;
-      return i;
-    }
-    mask <<= 1;
-  }
-  return 0xff;
+	uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+	for (uint8_t i = 0; i < (5-cnt); i++) {
+		if (!(_used_timers & mask)) {
+			_used_timers |= mask;
+			return i;
+		}
+		mask <<= 1;
+	}
+	return 0xff;
 }
 
 uint8_t FlexIOHandler::requestShifters(uint8_t cnt) {
-  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
-  for (uint8_t i = 0; i < (5-cnt); i++) {
-    if (!(_used_shifters & mask)) {
-      _used_shifters |= mask;
-      return i;
-    }
-    mask <<= 1;
-  }
-  return 0xff;
+	uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+	for (uint8_t i = 0; i < (5-cnt); i++) {
+		if (!(_used_shifters & mask)) {
+	  		_used_shifters |= mask;
+	  		return i;
+		}
+		mask <<= 1;
+	}
+	return 0xff;
 }
 
 void FlexIOHandler::IRQHandler() {
@@ -126,15 +126,17 @@ void FlexIOHandler::IRQHandler() {
 }
 
 void FlexIOHandler::freeTimers(uint8_t n, uint8_t cnt) {
-  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
-  for (;n < 0; n--) mask <<= 1;
-  _used_timers &= ~mask;
+	if (n == 0xff) return;	// don't free if we did not allocate
+	uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+	for (;n < 0; n--) mask <<= 1;
+	_used_timers &= ~mask;
 }
 
 void FlexIOHandler::freeShifters(uint8_t n, uint8_t cnt) {
-  uint8_t mask = (cnt == 1)? 0x1 : 0x3;
-  for (;n < 0; n--) mask <<= 1;
-  _used_shifters &= ~mask;
+	if (n == 0xff) return;	// don't free if we did not allocate
+	uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+	for (;n < 0; n--) mask <<= 1;
+	_used_shifters &= ~mask;
 }
 
 bool FlexIOHandler::addIOHandlerCallback(FlexIOHandlerCallback *callback) {
