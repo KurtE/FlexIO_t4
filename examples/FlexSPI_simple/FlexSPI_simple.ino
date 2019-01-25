@@ -13,11 +13,22 @@ void setup() {
 
   Serial.println("End Setup");
 }
-
+uint8_t buf[] = "abcdefghijklmnopqrstuvwxyz";
+uint16_t ret_buf[256];
 uint8_t ch_out = 0;
 
 void loop() {
-  Serial.printf("%02x ", SPIFLEX.transfer(ch_out++));
-  if ((ch_out & 0x1f) == 0) Serial.println();
-  delay(250);
+	for (uint8_t ch_out = 0; ch_out < 64; ch_out++) {
+		ret_buf[ch_out] = SPIFLEX.transfer(ch_out);
+	}
+//	Serial.println();
+	delay(25);
+
+	uint8_t index = 0;
+	for (uint16_t ch_out = 0; ch_out < 500; ch_out+=25) {
+	  ret_buf[ch_out] = SPIFLEX.transfer16(ch_out);	  
+	}
+	delay(25);
+	SPIFLEX.transfer(buf, NULL, sizeof(buf));
+	delay(500);
 }
