@@ -1,10 +1,41 @@
+/* Teensyduino Core Library
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * 1. The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * 2. If the Software is incorporated into a build system that allows
+ * selection among a list of target devices, then similar target
+ * devices manufactured by PJRC.COM must be included in the list of
+ * target devices and selectable in the same manner.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+//-----------------------------------------------------------------------------
+// Include files
+//-----------------------------------------------------------------------------
 #include "FlexIO_t4.h"
 
-#define IMXRT_FLEXIO1_S		(*(IMXRT_FLEXIO_t *)0x401AC000)
-#define IMXRT_FLEXIO2_S		(*(IMXRT_FLEXIO_t *)0x401B0000)
-//#define IMXRT_FLEXIO3		(*(IMXRT_REGISTER32_t *)0x42020000) only RT1062
 
 
+//-----------------------------------------------------------------------------
+// FlexIO Hardware structures
+//-----------------------------------------------------------------------------
 extern void IRQHandler_FlexIO1();
 extern void IRQHandler_FlexIO2();
 
@@ -35,6 +66,9 @@ static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHand
 
 static FlexIOHandler *flex_list[] = {&flexIO1, &flexIO2};
 
+//-----------------------------------------------------------------------------
+// Interrupt functions
+//-----------------------------------------------------------------------------
 void IRQHandler_FlexIO1() {
 	FlexIOHandlerCallback **ppfhc = flex1_Handler_callbacks;
 	for (uint8_t i = 0; i < 4; i++) {
@@ -60,7 +94,9 @@ void IRQHandler_FlexIO2() {
 }
 
 
-
+//-----------------------------------------------------------------------------
+// Map IO pins to their Flex object and the flex pin 
+//-----------------------------------------------------------------------------
 FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex_pin)
 {
   FlexIOHandler *pflex = nullptr;
@@ -83,6 +119,9 @@ FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex
 	return nullptr;
 }
 
+//-----------------------------------------------------------------------------
+// Set an IO pin into Flex Mode
+//-----------------------------------------------------------------------------
 bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
 	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
 		if (hardware().io_pin[i] == pin) {
@@ -94,6 +133,9 @@ bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
 }
 
 
+//-----------------------------------------------------------------------------
+// Request and release Timers and Shifters
+//-----------------------------------------------------------------------------
 // TODO: Get count of timers/shifters/buffers out of object...
 // Also handle cnt > 1...
 // Currently lets support 1 or 2.
@@ -139,6 +181,9 @@ void FlexIOHandler::freeShifters(uint8_t n, uint8_t cnt) {
 	_used_shifters &= ~mask;
 }
 
+//-----------------------------------------------------------------------------
+// Add a call back object to be called when the IRQ is called
+//-----------------------------------------------------------------------------
 bool FlexIOHandler::addIOHandlerCallback(FlexIOHandlerCallback *callback) {
 	FlexIOHandlerCallback **pflex_handler = (FlexIOHandlerCallback**)_callback_list_addr;
 
@@ -159,6 +204,10 @@ bool FlexIOHandler::addIOHandlerCallback(FlexIOHandlerCallback *callback) {
 	}
 	return false;
 }
+
+//-----------------------------------------------------------------------------
+// Remove callbacks
+//-----------------------------------------------------------------------------
 bool FlexIOHandler::removeIOHandlerCallback(FlexIOHandlerCallback *callback) {
 	FlexIOHandlerCallback **pflex_handler = (FlexIOHandlerCallback**)_callback_list_addr;
 
@@ -170,4 +219,59 @@ bool FlexIOHandler::removeIOHandlerCallback(FlexIOHandlerCallback *callback) {
 		pflex_handler++;	// look at next one. 
 	}
 	return false;
+}
+
+
+//-----------------------------------------------------------------------------
+// Compute the Flex IO clock rate. 
+//-----------------------------------------------------------------------------
+uint32_t FlexIOHandler::computeClockRate()  {
+	// Todo: add all of this stuff into hardware()... 
+	uint32_t pll_clock = 480000000U;	// Assume PPL3_SEL
+	uint8_t clk_sel;
+	uint8_t clk_pred;
+	uint8_t clk_podf;
+	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
+		// FlexIO1... 
+		clk_sel = (CCM_CDCDR >> 7) & 0x3;
+		clk_pred = (CCM_CDCDR >> 12) & 0x7;
+		clk_podf = (CCM_CDCDR >> 9) & 0x7;
+	} else {
+		// FlexIO2... 
+		clk_sel = (CCM_CSCMR2 >> 19) & 0x3;
+		clk_pred = (CCM_CS1CDR >> 9) & 0x7;
+		clk_podf = (CCM_CS1CDR >> 25) & 0x7;
+	}
+	// TODO - look at the actual clock select
+	return pll_clock / (uint32_t)((clk_pred+1) * (clk_podf+1));
+}
+
+//-----------------------------------------------------------------------------
+// Try to set clock settings
+//-----------------------------------------------------------------------------
+void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf)  {
+	// Todo: add all of this stuff into hardware()... 
+	// warning this does no validation of the values passed in...
+	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
+		// FlexIO1... 
+		// need to turn clock off...
+		hardware().clock_gate_register &= ~hardware().clock_gate_mask;
+
+		CCM_CDCDR = (CCM_CDCDR & ~(CCM_CDCDR_FLEXIO1_CLK_SEL(3) | CCM_CDCDR_FLEXIO1_CLK_PRED(7) | CCM_CDCDR_FLEXIO1_CLK_PODF(7))) 
+			| CCM_CDCDR_FLEXIO1_CLK_SEL(clk_sel) | CCM_CDCDR_FLEXIO1_CLK_PRED(clk_pred) | CCM_CDCDR_FLEXIO1_CLK_PODF(clk_podf);
+
+		// turn clock back on
+		hardware().clock_gate_register |= hardware().clock_gate_mask;
+	} else {
+		// FlexIO2... 
+		// need to turn clock off...
+		hardware().clock_gate_register &= ~hardware().clock_gate_mask;
+
+		CCM_CSCMR2 = (CCM_CSCMR2 & ~(CCM_CSCMR2_FLEXIO2_CLK_SEL(3))) | CCM_CSCMR2_FLEXIO2_CLK_SEL(clk_sel);
+		CCM_CS1CDR = (CCM_CS1CDR & ~(CCM_CS1CDR_FLEXIO2_CLK_PRED(7)|CCM_CS1CDR_FLEXIO2_CLK_PODF(7)) )
+			| CCM_CS1CDR_FLEXIO2_CLK_PRED(clk_pred) | CCM_CS1CDR_FLEXIO2_CLK_PODF(clk_podf);
+
+		// turn clock back on
+		hardware().clock_gate_register |= hardware().clock_gate_mask;
+	}
 }

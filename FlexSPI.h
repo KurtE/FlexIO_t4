@@ -44,40 +44,15 @@
 #define SPI_MODE3 0x0C
 #endif
 
+// Pretty stupid settings for now...
 class FlexSPISettings {
 public:
-	FlexSPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) {
-		if (__builtin_constant_p(clock)) {
-			init_AlwaysInline(clock, bitOrder, dataMode);
-		} else {
-			init_MightInline(clock, bitOrder, dataMode);
-		}
-	}
-	FlexSPISettings() {
-		init_AlwaysInline(4000000, MSBFIRST, SPI_MODE0);
-	}
-private:
-	void init_MightInline(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) {
-		init_AlwaysInline(clock, bitOrder, dataMode);
-	}
-	void init_AlwaysInline(uint32_t clock, uint8_t bitOrder, uint8_t dataMode)
-	  __attribute__((__always_inline__)) {
-	  	// BUGBUG: Hard coded to 480000000/16 = 30000000 Maybe update clocks...
-		// TODO: Need to check timings as related to chip selects?
+	FlexSPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) : _clock(clock), 
+		_bitOrder(bitOrder), _dataMode(dataMode) {};
 
-		uint32_t div;
-		//uint32_t clkhz = 528000000u / (((CCM_CBCMR >> 26 ) & 0x07 ) + 1);  // LPSPI peripheral clock
-		div = 30000000u  / clock;  
-		if (div) {
-			if (clock > (30000000u / div)) div++;
-		}
-
-		// Quick and dirty for now...
-		timcmp_l = div;
-	}
-	uint8_t timcmp_l; // time compare low...
-	uint32_t tcr; // transmit command, pg 2664 (RT1050 ref, rev 2)
-	friend class FlexSPI;
+	uint32_t _clock;
+	uint8_t _bitOrder;
+	uint8_t	_dataMode;
 };
 
 class FlexSPI : public FlexIOHandlerCallback
@@ -98,7 +73,11 @@ public:
 	void setTransferWriteFill(uint8_t ch ) {_transferWriteFill = ch;}
 	void transfer(const void * buf, void * retbuf, size_t count);
 
+	void beginTransaction(FlexSPISettings settings);
+	void endTransaction(void);
 
+	// have ability to retrieve the FLEXIO object
+	FlexIOHandler  *flexIOHandler() {return _pflex;}
 
 	// Call back from flexIO when ISR hapens
 	virtual bool call_back (FlexIOHandler *pflex);
@@ -111,6 +90,11 @@ private:
 	int _csPin;
 
 	uint8_t			_transferWriteFill = 0;
+	uint8_t			_in_transaction_flag = 0;
+
+	uint32_t 		_clock = 0;
+	uint8_t 		_bitOrder = MSBFIRST;
+	uint8_t			_dataMode = SPI_MODE0;
 
 	// FlexIO variables.
 	FlexIOHandler  *_pflex = nullptr;
@@ -120,7 +104,8 @@ private:
 	uint8_t 		_cs_flex_pin = 0xff;
 	uint8_t 		_timer = 0xff;
 	uint8_t 		_shifter = 0xff;
-	uint8_t 		_shifter_mask;
+	uint8_t 		_shifter_mask = 0;
+
 	
 };
 #endif //_FLEX_SPI_H_

@@ -76,6 +76,10 @@ typedef struct {
 	volatile uint32_t SHIFTBUFNIS[4];	// 0x780
 } IMXRT_FLEXIO_t;
 
+#define IMXRT_FLEXIO1_S		(*(IMXRT_FLEXIO_t *)0x401AC000)
+#define IMXRT_FLEXIO2_S		(*(IMXRT_FLEXIO_t *)0x401B0000)
+//#define IMXRT_FLEXIO3		(*(IMXRT_REGISTER32_t *)0x42020000) only RT1062
+
 
 // forward reference
 class FlexIOHandler; 
@@ -118,6 +122,14 @@ public:
 	bool setIOPinToFlexMode(uint8_t pin);
 	bool addIOHandlerCallback(FlexIOHandlerCallback *callback);
 	bool removeIOHandlerCallback(FlexIOHandlerCallback *callback);
+
+	uint32_t computeClockRate();
+
+	// clksel(0-3PLL4, Pll3 PFD2 PLL5, *PLL3_sw)
+	// clk_pred(0, 1, 2, 7) - divide (n+1)
+	// clk_podf(0, *7) divide (n+1)
+	// So default is 480mhz/16
+	void setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf);
 
 	void IRQHandler(void);
 

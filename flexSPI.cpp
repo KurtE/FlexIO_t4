@@ -90,6 +90,7 @@ bool FlexSPI::begin() {
 	// Lets print out some of the settings and the like to get idea of state
 #ifdef DEBUG_FlexSPI
 	Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
+	Serial.printf("FlexIO bus speed: %d\n", _pflex->computeClockRate());
 	Serial.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n", p->PARAM, p->CTRL, p->CTRL, p->PIN);
 	Serial.printf("SHIFTSTAT:%x SHIFTERR=%x TIMSTAT=%x\n", p->SHIFTSTAT, p->SHIFTERR, p->TIMSTAT);
 	Serial.printf("SHIFTSIEN:%x SHIFTEIEN=%x TIMIEN=%x\n", p->SHIFTSIEN, p->SHIFTEIEN, p->TIMIEN);
@@ -117,6 +118,43 @@ void FlexSPI::end(void) {
 	}
 
 }
+
+void FlexSPI::beginTransaction(FlexSPISettings settings) {
+	#ifdef SPI_TRANSACTION_MISMATCH_LED
+	if (inTransactionFlag) {
+		pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
+		digitalWrite(SPI_TRANSACTION_MISMATCH_LED, HIGH);
+	}
+	_in_transaction_flag = 1;
+	#endif
+
+	// right now pretty stupid
+	if (settings._clock != _clock) {
+		_clock = settings._clock;
+
+		uint32_t clock_speed = _pflex->computeClockRate() / 2;   // get speed divide by 
+		uint32_t div = clock_speed / _clock;
+		if (div) {
+			if ((clock_speed / div)  > _clock) div++;	// unless even multiple increment
+			div--;		// the actual value stored is the -1...	
+		}
+		_pflex->port().TIMCMP[_timer] = div | 0x0f00; // Set the speed and set into 8 bit mode
+
+	}
+}
+
+// After performing a group of transfers and releasing the chip select
+// signal, this function allows others to access the SPI bus
+void FlexSPI::endTransaction(void) {
+	#ifdef SPI_TRANSACTION_MISMATCH_LED
+	if (!inTransactionFlag) {
+		pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
+		digitalWrite(SPI_TRANSACTION_MISMATCH_LED, HIGH);
+	}
+	_in_transaction_flag = 0;
+	#endif
+}
+
 
 uint8_t FlexSPI::transfer(uint8_t b) 
 {
