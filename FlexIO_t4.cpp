@@ -227,7 +227,7 @@ bool FlexIOHandler::removeIOHandlerCallback(FlexIOHandlerCallback *callback) {
 //-----------------------------------------------------------------------------
 uint32_t FlexIOHandler::computeClockRate()  {
 	// Todo: add all of this stuff into hardware()... 
-	uint32_t pll_clock = 480000000U;	// Assume PPL3_SEL
+	uint32_t pll_clock; // = 480000000U;	// Assume PPL3_SEL
 	uint8_t clk_sel;
 	uint8_t clk_pred;
 	uint8_t clk_podf;
@@ -243,6 +243,15 @@ uint32_t FlexIOHandler::computeClockRate()  {
 		clk_podf = (CCM_CS1CDR >> 25) & 0x7;
 	}
 	// TODO - look at the actual clock select
+	switch (clk_sel) {
+		case 1: 
+			pll_clock = 508240000U;
+			break;
+		case 3:
+		default: 
+			pll_clock = 480000000U;
+			break;
+	}
 	return pll_clock / (uint32_t)((clk_pred+1) * (clk_podf+1));
 }
 
@@ -252,6 +261,12 @@ uint32_t FlexIOHandler::computeClockRate()  {
 void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf)  {
 	// Todo: add all of this stuff into hardware()... 
 	// warning this does no validation of the values passed in...
+	if (clk_sel == 2) {
+		// PLL4 - We may need to enable this clock!
+		CCM_ANALOG_PLL_VIDEO_CLR = CCM_ANALOG_PLL_ARM_POWERDOWN | CCM_ANALOG_PLL_ARM_BYPASS;
+		CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_ARM_ENABLE;
+		Serial.printf("CCM_ANALOG_PLL_VIDEO: %x\n", CCM_ANALOG_PLL_VIDEO);
+	}
 	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
 		// FlexIO1... 
 		// need to turn clock off...

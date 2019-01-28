@@ -15,15 +15,12 @@ bool FlexSPI::begin() {
 	//-------------------------------------------------------------------------
 	// Make sure all of the IO pins are valid flex pins on same controller
 	//-------------------------------------------------------------------------
-	uint8_t 		_mosi_flex_pin = 0xff;
-	uint8_t 		_sck_flex_pin = 0xff;
-	uint8_t 		_miso_flex_pin = 0xff;
-	uint8_t 		_cs_flex_pin = 0xff;
-
 	_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_mosiPin, _mosi_flex_pin);
 	FlexIOHandler *sck_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_sckPin, _sck_flex_pin);
 	FlexIOHandler *miso_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_misoPin, _miso_flex_pin);
-	FlexIOHandler *cs_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_csPin, _cs_flex_pin);
+	FlexIOHandler *cs_flex = _pflex;
+	if (_csPin != -1)
+		cs_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_csPin, _cs_flex_pin);
 
 	// Make sure all of the pins map to same Flex IO controller
 	if (!_pflex  || (_pflex != sck_flex) || (_pflex != miso_flex) || (_pflex != cs_flex)) {
@@ -63,17 +60,24 @@ bool FlexSPI::begin() {
 
 	p->TIMCMP[_timer] = 0x0f01; // (8 bits?)0x3f01; // ???0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
 
-	p->TIMCFG[_timer] = FLEXIO_TIMCFG_TIMOUT(1) | FLEXIO_TIMCFG_TSTART | FLEXIO_TIMCFG_TSTOP(2) |
-	                          FLEXIO_TIMCFG_TIMENA(2) |  FLEXIO_TIMCFG_TIMDIS(2); //0x0100_2222;
 	p->TIMCTL[_timer] =  FLEXIO_TIMCTL_TRGSEL(1) | FLEXIO_TIMCTL_TRGPOL | FLEXIO_TIMCTL_TRGSRC 
 					| FLEXIO_TIMCTL_PINCFG(3) | FLEXIO_TIMCTL_PINSEL(_sck_flex_pin)| FLEXIO_TIMCTL_TIMOD(1);  // 0x01C0_0001;
 
-	p->TIMCMP[_timer+1] = 0xffff; // never compare
-						// 0x0000_1100 enable/desale with clock(n-1)
-	p->TIMCFG[_timer+1] = FLEXIO_TIMCFG_TIMDIS(1) | FLEXIO_TIMCFG_TIMENA(1); // 0x0000_1100
-					// 
-	p->TIMCTL[_timer+1] =  FLEXIO_TIMCTL_PINCFG(3) | FLEXIO_TIMCTL_PINSEL(_cs_flex_pin) | 
-					FLEXIO_TIMCTL_PINPOL | FLEXIO_TIMCTL_TIMOD(3);  // 0003_0383;
+
+	if (_csPin != -1) {
+		p->TIMCFG[_timer] = FLEXIO_TIMCFG_TIMOUT(1) | FLEXIO_TIMCFG_TIMDIS(2) | FLEXIO_TIMCFG_TIMENA(2) 
+	                           | FLEXIO_TIMCFG_TSTOP(2) | FLEXIO_TIMCFG_TSTART; //0x0100_2222;
+
+		p->TIMCMP[_timer+1] = 0xffff; // never compare
+							// 0x0000_1100 enable/desale with clock(n-1)
+		p->TIMCFG[_timer+1] = FLEXIO_TIMCFG_TIMDIS(1) | FLEXIO_TIMCFG_TIMENA(1); // 0x0000_1100
+						// 
+		p->TIMCTL[_timer+1] =  FLEXIO_TIMCTL_PINCFG(3) | FLEXIO_TIMCTL_PINSEL(_cs_flex_pin) | 
+						FLEXIO_TIMCTL_PINPOL | FLEXIO_TIMCTL_TIMOD(3);  // 0003_0383;
+
+	} else {
+		p->TIMCFG[_timer] = FLEXIO_TIMCFG_TIMOUT(1) | FLEXIO_TIMCFG_TIMDIS(2) | FLEXIO_TIMCFG_TIMENA(2); 
+	}
 
 	// Make sure this flex IO object is enabled				
 	p->CTRL = FLEXIO_CTRL_FLEXEN;
@@ -83,7 +87,8 @@ bool FlexSPI::begin() {
 	_pflex->setIOPinToFlexMode(_mosiPin);
 	_pflex->setIOPinToFlexMode(_sckPin);
 	_pflex->setIOPinToFlexMode(_misoPin);
-	_pflex->setIOPinToFlexMode(_csPin);
+	if (_csPin != -1)
+		_pflex->setIOPinToFlexMode(_csPin);
 
 
 	_pflex->addIOHandlerCallback(this);
