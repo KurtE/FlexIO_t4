@@ -31,11 +31,11 @@ bool FlexSPI::begin() {
 	// Now reserve timers and shifters
 	IMXRT_FLEXIO_t *p = &_pflex->port();
 
-	_timer = _pflex->requestTimers(2);
+	_timer = _pflex->requestTimers((_csPin != -1)? 2 : 1);
 	_shifter = _pflex->requestShifters(2);
 
 	if ((_timer == 0xff) || (_shifter == 0xff)) {
-		_pflex->freeTimers(_timer, 2);
+		_pflex->freeTimers(_timer, (_csPin != -1)? 2 : 1);
 		_timer = 0xff;
 		_pflex->freeShifters(_shifter, 2);
 		_shifter = 0xff;
@@ -113,7 +113,7 @@ bool FlexSPI::begin() {
 void FlexSPI::end(void) {
 	// If the transmit was allocated free it now as well as timers and shifters.
 	if (_pflex) {
-		_pflex->freeTimers(_timer, 2);
+		_pflex->freeTimers(_timer, (_csPin != -1)? 2 : 1);
 		_timer = 0xff;
 		_pflex->freeShifters(_shifter, 2);
 		_shifter = 0xff;
