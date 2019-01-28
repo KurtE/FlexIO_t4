@@ -1,4 +1,4 @@
-#include "flexSerial.h"
+#include "FlexSerial.h"
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 

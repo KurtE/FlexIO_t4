@@ -6,7 +6,7 @@
 //============================================================================
 
 #include <FlexIO_t4.h>
-#include <flexSerial.h>
+#include <FlexSerial.h>
 
 FlexSerial SerialFlex(-1, 2); // currently setup for pin 2 TX
 
