@@ -92,6 +92,12 @@ bool FlexSPI::begin() {
 
 
 	_pflex->addIOHandlerCallback(this);
+
+	// precompute the shift registers depending on MSB or LSB first...
+	_bitOrder = MSBFIRST;
+	_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_shifter];
+	_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_shifter+1];;
+
 	// Lets print out some of the settings and the like to get idea of state
 #ifdef DEBUG_FlexSPI
 	Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
@@ -144,6 +150,17 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 			div--;		// the actual value stored is the -1...	
 		}
 		_pflex->port().TIMCMP[_timer] = div | 0x0f00; // Set the speed and set into 8 bit mode
+	}
+
+	if (_bitOrder != settings._bitOrder) {
+		_bitOrder = settings._bitOrder;
+		if (_bitOrder == MSBFIRST) {
+			_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_shifter];
+			_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_shifter+1];;
+		} else {
+			_shiftBufOutReg = &_pflex->port().SHIFTBUF[_shifter];
+			_shiftBufInReg = &_pflex->port().SHIFTBUFBYS[_shifter+1];;			
+		}
 
 	}
 }
@@ -165,14 +182,16 @@ uint8_t FlexSPI::transfer(uint8_t b)
 {
 	// Need to do some validation...
 	uint8_t return_val = 0xff;
-	_pflex->port().SHIFTBUFBBS[_shifter] = b;	// try putting out a byte.
+	*_shiftBufOutReg = b;
 
 	// Now lets wait for something to come back.
 	uint8_t rx_shifter_mask = _shifter_mask << 1;	// n+1 port
 	uint16_t timeout = 0xffff;	// don't completely hang
 	while (!(_pflex->port().SHIFTSTAT & rx_shifter_mask) && (--timeout)) ;
 
-	if (_pflex->port().SHIFTSTAT & rx_shifter_mask) return_val = _pflex->port().SHIFTBUFBIS[_shifter+1] & 0xff;
+	if (_pflex->port().SHIFTSTAT & rx_shifter_mask) {
+		return_val = *_shiftBufInReg & 0xff;
+	}
 
 	return return_val;
 }
@@ -182,14 +201,18 @@ uint16_t FlexSPI::transfer16(uint16_t w)
 	uint16_t return_val = 0xffff;
 	uint16_t timcmp_save = _pflex->port().TIMCMP[_timer];	// remember value coming in
 	_pflex->port().TIMCMP[_timer] = (timcmp_save & 0xff) | 0x1f00; // Try turning on 16 bit mode
-	_pflex->port().SHIFTBUFBBS[_shifter] = w;	// try putting out a byte.
+
+	*_shiftBufOutReg = w;
 
 	// Now lets wait for something to come back.
 	uint8_t rx_shifter_mask = _shifter_mask << 1;	// n+1 port
 	uint16_t timeout = 0xffff;	// don't completely hang
 	while (!(_pflex->port().SHIFTSTAT & rx_shifter_mask) && (--timeout)) ;
 
-	if (_pflex->port().SHIFTSTAT & rx_shifter_mask) return_val = _pflex->port().SHIFTBUFBIS[_shifter+1] & 0xffff;
+	if (_pflex->port().SHIFTSTAT & rx_shifter_mask) {
+		return_val = *_shiftBufInReg & 0xffff;
+	}
+
 	_pflex->port().TIMCMP[_timer] = timcmp_save; // (8 bits?)0x3f01; // ???0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
 
 	return return_val;
@@ -201,18 +224,18 @@ void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	uint16_t rx_count = count;
 	uint8_t *tx_buffer = (uint8_t*)buf;
 	uint8_t *rx_buffer = (uint8_t*)retbuf;
+	uint8_t ch_out = tx_buffer? *tx_buffer++ : _transferWriteFill;
 
 	uint8_t rx_shifter_mask = _shifter_mask << 1;	// n+1 port
 	while (rx_count) {
 		if ((tx_count) && (_pflex->port().SHIFTSTAT & _shifter_mask)) {
+			*_shiftBufOutReg = ch_out;
 			if (tx_buffer) 
-				_pflex->port().SHIFTBUFBBS[_shifter] = *tx_buffer++;
-			else
-				_pflex->port().SHIFTBUFBBS[_shifter] = _transferWriteFill;
+				ch_out = *tx_buffer++;
 			tx_count--;
 		}
 		if (_pflex->port().SHIFTSTAT & rx_shifter_mask) {
-			uint8_t ch = _pflex->port().SHIFTBUFBIS[_shifter+1] & 0xff;
+			uint8_t ch = *_shiftBufInReg & 0xff;
 			if (rx_buffer) 
 				*rx_buffer++ = ch;
 			rx_count--;

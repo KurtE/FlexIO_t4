@@ -1,7 +1,7 @@
 #include <FlexIO_t4.h>
 #include <FlexSPI.h>
 
-#define HARDWARE_CS
+//#define HARDWARE_CS
 #ifdef HARDWARE_CS
 FlexSPI SPIFLEX(2, 3, 4, 5); // Setup on (int mosiPin, int sckPin, int misoPin, int csPin=-1) :
 #define assert_cs()

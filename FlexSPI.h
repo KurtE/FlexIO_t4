@@ -95,6 +95,9 @@ private:
 	uint32_t 		_clock = 0;
 	uint8_t 		_bitOrder = MSBFIRST;
 	uint8_t			_dataMode = SPI_MODE0;
+	volatile uint32_t *_shiftBufInReg = nullptr;
+	volatile uint32_t *_shiftBufOutReg = nullptr;
+
 
 	// FlexIO variables.
 	FlexIOHandler  *_pflex = nullptr;
