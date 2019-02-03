@@ -2,7 +2,7 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
-#define DEBUG_FlexSPI Serial4
+//#define DEBUG_FlexSPI Serial4
 #define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalWriteFast(pin, state) 
 FlexSPI  *FlexSPI::_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT] = {nullptr, nullptr};
