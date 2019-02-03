@@ -29,11 +29,11 @@ bool FlexSerial::begin(uint32_t baud) {
 		Serial.printf("pin %d maps to: %x, port: %x pin %x\n", _txPin, (uint32_t)_tx_pflex, (uint32_t)p, _tx_flex_pin);
 #endif		
 		_tx_timer = _tx_pflex->requestTimers();
-		_tx_shifter = _tx_pflex->requestShifters();
+		_tx_shifter = _tx_pflex->requestShifter();
 		if ((_tx_timer == 0xff) || (_tx_shifter == 0xff)) {
 			_tx_pflex->freeTimers(_tx_timer);
 			_tx_timer = 0xff;
-			_tx_pflex->freeShifters(_tx_shifter);
+			_tx_pflex->freeShifter(_tx_shifter);
 			_tx_shifter = 0xff;
 			Serial.println("FlexSerial - Failed to allocate TX timer or shifter");
 			return false;
@@ -90,11 +90,16 @@ bool FlexSerial::begin(uint32_t baud) {
 		Serial.printf("pin %d maps to: %x, port: %x pin %x\n", _rxPin, (uint32_t)_rx_pflex, (uint32_t)p, _rx_flex_pin);
 #endif		
 		_rx_timer = _rx_pflex->requestTimers();
-		_rx_shifter = _rx_pflex->requestShifters();
+		
+		// We don't need to, but if using two shifters, try not to take shifters associated with one dma channel
+		uint8_t dma_channel_to_avoid = 0xff;
+		if (_tx_pflex == _rx_pflex) dma_channel_to_avoid = _tx_pflex->shiftersDMAChannel(_tx_shifter);
+
+		_rx_shifter = _rx_pflex->requestShifter(dma_channel_to_avoid);
 		if ((_rx_timer == 0xff) || (_rx_shifter == 0xff)) {
 			_rx_pflex->freeTimers(_rx_timer);
 			_rx_timer = 0xff;
-			_rx_pflex->freeShifters(_rx_shifter);
+			_rx_pflex->freeShifter(_rx_shifter);
 			_rx_shifter = 0xff;
 			Serial.println("FlexSerial - Failed to allocate RX timer or shifter");
 			return false;
@@ -152,7 +157,7 @@ void FlexSerial::end(void) {
 	if (_tx_pflex) {
 		_tx_pflex->freeTimers(_tx_timer);
 		_tx_timer = 0xff;
-		_tx_pflex->freeShifters(_tx_shifter);
+		_tx_pflex->freeShifter(_tx_shifter);
 		_tx_shifter = 0xff;
 
 		_tx_pflex->removeIOHandlerCallback(this);

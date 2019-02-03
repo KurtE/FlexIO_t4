@@ -55,6 +55,9 @@ public:
 
 	// Call back from flexIO when ISR hapens
 	virtual bool call_back (FlexIOHandler *pflex);
+	FlexIOHandler  *flexIOHandlerTX() {return _tx_pflex;}
+	FlexIOHandler  *flexIOHandlerRX() {return _rx_pflex;}
+
 
 
 private:

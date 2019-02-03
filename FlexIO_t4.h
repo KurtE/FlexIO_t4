@@ -92,11 +92,14 @@ public:
 class FlexIOHandler {
 public:
 	static const uint8_t CNT_FLEX_PINS = 9;
+	static const uint8_t CNT_SHIFTERS = 4;
+	static const uint8_t CNT_FLEX_IO_OBJECT = 2;	// TODO: will be different on other chip
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
 		const uint32_t clock_gate_mask;
 		const IRQ_NUMBER_t  flex_irq;
 		void    (*flex_isr)();
+		const uint8_t  shifters_dma_channel[CNT_SHIFTERS];
 		const uint8_t  io_pin[CNT_FLEX_PINS];
 		const uint8_t  flex_pin[CNT_FLEX_PINS];
 		const uint8_t  io_pin_mux[CNT_FLEX_PINS];
@@ -112,12 +115,14 @@ public:
 
 	IMXRT_FLEXIO_t & port() { return *(IMXRT_FLEXIO_t *)port_addr; }
 	const FLEXIO_Hardware_t & hardware() { return *(const FLEXIO_Hardware_t *)hardware_addr; }
+	int FlexIOIndex();		// return the index of the ojbect 1:->0 2:->1 later 3:->2
 
 	uint8_t requestTimers(uint8_t cnt=1);
-	uint8_t requestShifters(uint8_t cnt=1);
+	uint8_t requestShifter(uint8_t not_dma_channel=0xff);
+	uint8_t shiftersDMAChannel(uint8_t n);
 
 	void freeTimers(uint8_t n, uint8_t cnt=1);
-	void freeShifters(uint8_t n, uint8_t cnt=1);
+	void freeShifter(uint8_t n);
 
 	bool setIOPinToFlexMode(uint8_t pin);
 	bool addIOHandlerCallback(FlexIOHandlerCallback *callback);

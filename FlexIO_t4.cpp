@@ -46,6 +46,8 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
+	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
+
 	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff,
 	4,       5,    6,    7,  8,   0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff,
@@ -55,6 +57,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
 	IRQ_FLEXIO2, 
 	IRQHandler_FlexIO2,
+	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
 	6,       7,    8,    9,  10,    11,   12,   13,   32,
 	17,     16,   10,   11,  0,      2,    1,    3,   12,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
@@ -132,6 +135,14 @@ bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
 	return false;
 }
 
+// return the index of the ojbect 1:->0 2:->1 later 3:->2
+int FlexIOHandler::FlexIOIndex()	
+{
+	for (uint8_t iflex = 0; iflex < (sizeof(flex_list) / sizeof(flex_list[0])); iflex++) {
+		if (flex_list[iflex] == this) return iflex;
+	}
+	return -1;
+}
 
 //-----------------------------------------------------------------------------
 // Request and release Timers and Shifters
@@ -151,10 +162,10 @@ uint8_t FlexIOHandler::requestTimers(uint8_t cnt) {
 	return 0xff;
 }
 
-uint8_t FlexIOHandler::requestShifters(uint8_t cnt) {
-	uint8_t mask = (cnt == 1)? 0x1 : 0x3;
-	for (uint8_t i = 0; i < (5-cnt); i++) {
-		if (!(_used_shifters & mask)) {
+uint8_t FlexIOHandler::requestShifter(uint8_t not_dma_channel) {
+	uint8_t mask = 0x1 ;
+	for (uint8_t i = 0; i < 4; i++) {
+		if (!(_used_shifters & mask) && (hardware().shifters_dma_channel[i] != not_dma_channel)) {
 	  		_used_shifters |= mask;
 	  		return i;
 		}
@@ -162,6 +173,12 @@ uint8_t FlexIOHandler::requestShifters(uint8_t cnt) {
 	}
 	return 0xff;
 }
+
+uint8_t FlexIOHandler::shiftersDMAChannel(uint8_t n) {
+	if (n < 4) return hardware().shifters_dma_channel[n];
+	return 0xff; 
+}
+
 
 void FlexIOHandler::IRQHandler() {
   
@@ -174,9 +191,9 @@ void FlexIOHandler::freeTimers(uint8_t n, uint8_t cnt) {
 	_used_timers &= ~mask;
 }
 
-void FlexIOHandler::freeShifters(uint8_t n, uint8_t cnt) {
+void FlexIOHandler::freeShifter(uint8_t n) {
 	if (n == 0xff) return;	// don't free if we did not allocate
-	uint8_t mask = (cnt == 1)? 0x1 : 0x3;
+	uint8_t mask = 0x1;
 	for (;n < 0; n--) mask <<= 1;
 	_used_shifters &= ~mask;
 }

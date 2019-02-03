@@ -2,9 +2,10 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
-#define DEBUG_FlexSPI
+#define DEBUG_FlexSPI Serial4
 #define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalWriteFast(pin, state) 
+FlexSPI  *FlexSPI::_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT] = {nullptr, nullptr};
 
 //=============================================================================
 // FlexSPI::Begin
@@ -32,30 +33,39 @@ bool FlexSPI::begin() {
 	IMXRT_FLEXIO_t *p = &_pflex->port();
 
 	_timer = _pflex->requestTimers((_csPin != -1)? 2 : 1);
-	_shifter = _pflex->requestShifters(2);
+	_tx_shifter = _pflex->requestShifter();
+	_rx_shifter = _pflex->requestShifter(_pflex->shiftersDMAChannel(_tx_shifter));
 
-	if ((_timer == 0xff) || (_shifter == 0xff)) {
+	// If first request failed to get second different shifter on different dma channel, allocate other one on same channel
+	// but DMA will not work... 
+	if (_rx_shifter ==  0xff) _rx_shifter = _pflex->requestShifter();
+
+	if ((_timer == 0xff) || (_tx_shifter == 0xff) || (_rx_shifter == 0xff)) {
 		_pflex->freeTimers(_timer, (_csPin != -1)? 2 : 1);
 		_timer = 0xff;
-		_pflex->freeShifters(_shifter, 2);
-		_shifter = 0xff;
+		_pflex->freeShifter(_tx_shifter);
+		_pflex->freeShifter(_rx_shifter);
+		_tx_shifter = 0xff;
+		_rx_shifter = 0xff;
 		Serial.println("FlexSPI - Failed to allocate timers or shifters");
 		return false;
 	}
 
-	_shifter_mask = 1;
-	for (uint8_t i = _shifter; i > 0; i--) _shifter_mask <<= 1;
+	_tx_shifter_mask = 1;
+	for (uint8_t i = _tx_shifter; i > 0; i--) _tx_shifter_mask <<= 1;
+	_rx_shifter_mask = 1;
+	for (uint8_t i = _rx_shifter; i > 0; i--) _rx_shifter_mask <<= 1;
 
 #ifdef DEBUG_FlexSPI
-	Serial.printf("timer index: %d shifter index: %d mask: %x\n", _timer, _shifter, _shifter_mask);
+	DEBUG_FlexSPI.printf("timer index: %d shifter index: %d mask: %x\n", _timer, _tx_shifter, _tx_shifter_mask);
 	// lets try to configure a tranmitter like example
-	Serial.println("Before configure flexio");
+	DEBUG_FlexSPI.println("Before configure flexio");
 #endif
-	p->SHIFTCFG[_shifter] = 0; // Start/stop disabled;
-	p->SHIFTCTL[_shifter] = FLEXIO_SHIFTCTL_TIMPOL | FLEXIO_SHIFTCTL_PINCFG(3) | FLEXIO_SHIFTCTL_SMOD(2) |
+	p->SHIFTCFG[_tx_shifter] = 0; // Start/stop disabled;
+	p->SHIFTCTL[_tx_shifter] = FLEXIO_SHIFTCTL_TIMPOL | FLEXIO_SHIFTCTL_PINCFG(3) | FLEXIO_SHIFTCTL_SMOD(2) |
 	                              FLEXIO_SHIFTCTL_TIMSEL(_timer) | FLEXIO_SHIFTCTL_PINSEL(_mosi_flex_pin); // 0x0003_0002;
-	p->SHIFTCFG[_shifter+1] = 0; // Start/stop disabled;
-	p->SHIFTCTL[_shifter+1] =  FLEXIO_SHIFTCTL_SMOD(1) |
+	p->SHIFTCFG[_rx_shifter] = 0; // Start/stop disabled;
+	p->SHIFTCTL[_rx_shifter] =  FLEXIO_SHIFTCTL_SMOD(1) |
 	                              FLEXIO_SHIFTCTL_TIMSEL(_timer) | FLEXIO_SHIFTCTL_PINSEL(_miso_flex_pin); // 0x0003_0002;
 
 	p->TIMCMP[_timer] = 0x0f01; // (8 bits?)0x3f01; // ???0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
@@ -81,7 +91,7 @@ bool FlexSPI::begin() {
 
 	// Make sure this flex IO object is enabled				
 	p->CTRL = FLEXIO_CTRL_FLEXEN;
-	//p->SHIFTSTAT = _shifter_mask;   // Clear out the status.
+	//p->SHIFTSTAT = _tx_shifter_mask;   // Clear out the status.
 
 	// Set the IO pins into FLEXIO mode
 	_pflex->setIOPinToFlexMode(_mosiPin);
@@ -95,22 +105,22 @@ bool FlexSPI::begin() {
 
 	// precompute the shift registers depending on MSB or LSB first...
 	_bitOrder = MSBFIRST;
-	_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_shifter];
-	_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_shifter+1];;
+	_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_tx_shifter];
+	_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_rx_shifter];;
 
 	// Lets print out some of the settings and the like to get idea of state
 #ifdef DEBUG_FlexSPI
-	Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
-	Serial.printf("FlexIO bus speed: %d\n", _pflex->computeClockRate());
-	Serial.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n", p->PARAM, p->CTRL, p->CTRL, p->PIN);
-	Serial.printf("SHIFTSTAT:%x SHIFTERR=%x TIMSTAT=%x\n", p->SHIFTSTAT, p->SHIFTERR, p->TIMSTAT);
-	Serial.printf("SHIFTSIEN:%x SHIFTEIEN=%x TIMIEN=%x\n", p->SHIFTSIEN, p->SHIFTEIEN, p->TIMIEN);
-	Serial.printf("SHIFTSDEN:%x SHIFTSTATE=%x\n", p->SHIFTSDEN, p->SHIFTSTATE);
-	Serial.printf("SHIFTCTL:%x %x %x %x\n", p->SHIFTCTL[0], p->SHIFTCTL[1], p->SHIFTCTL[2], p->SHIFTCTL[3]);
-	Serial.printf("SHIFTCFG:%x %x %x %x\n", p->SHIFTCFG[0], p->SHIFTCFG[1], p->SHIFTCFG[2], p->SHIFTCFG[3]);
-	Serial.printf("TIMCTL:%x %x %x %x\n", p->TIMCTL[0], p->TIMCTL[1], p->TIMCTL[2], p->TIMCTL[3]);
-	Serial.printf("TIMCFG:%x %x %x %x\n", p->TIMCFG[0], p->TIMCFG[1], p->TIMCFG[2], p->TIMCFG[3]);
-	Serial.printf("TIMCMP:%x %x %x %x\n", p->TIMCMP[0], p->TIMCMP[1], p->TIMCMP[2], p->TIMCMP[3]);
+	DEBUG_FlexSPI.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
+	DEBUG_FlexSPI.printf("FlexIO bus speed: %d\n", _pflex->computeClockRate());
+	DEBUG_FlexSPI.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n", p->PARAM, p->CTRL, p->CTRL, p->PIN);
+	DEBUG_FlexSPI.printf("SHIFTSTAT:%x SHIFTERR=%x TIMSTAT=%x\n", p->SHIFTSTAT, p->SHIFTERR, p->TIMSTAT);
+	DEBUG_FlexSPI.printf("SHIFTSIEN:%x SHIFTEIEN=%x TIMIEN=%x\n", p->SHIFTSIEN, p->SHIFTEIEN, p->TIMIEN);
+	DEBUG_FlexSPI.printf("SHIFTSDEN:%x SHIFTSTATE=%x\n", p->SHIFTSDEN, p->SHIFTSTATE);
+	DEBUG_FlexSPI.printf("SHIFTCTL:%x %x %x %x\n", p->SHIFTCTL[0], p->SHIFTCTL[1], p->SHIFTCTL[2], p->SHIFTCTL[3]);
+	DEBUG_FlexSPI.printf("SHIFTCFG:%x %x %x %x\n", p->SHIFTCFG[0], p->SHIFTCFG[1], p->SHIFTCFG[2], p->SHIFTCFG[3]);
+	DEBUG_FlexSPI.printf("TIMCTL:%x %x %x %x\n", p->TIMCTL[0], p->TIMCTL[1], p->TIMCTL[2], p->TIMCTL[3]);
+	DEBUG_FlexSPI.printf("TIMCFG:%x %x %x %x\n", p->TIMCFG[0], p->TIMCFG[1], p->TIMCFG[2], p->TIMCFG[3]);
+	DEBUG_FlexSPI.printf("TIMCMP:%x %x %x %x\n", p->TIMCMP[0], p->TIMCMP[1], p->TIMCMP[2], p->TIMCMP[3]);
 #endif
 
 	return true;
@@ -121,8 +131,9 @@ void FlexSPI::end(void) {
 	if (_pflex) {
 		_pflex->freeTimers(_timer, (_csPin != -1)? 2 : 1);
 		_timer = 0xff;
-		_pflex->freeShifters(_shifter, 2);
-		_shifter = 0xff;
+		_pflex->freeShifter(_tx_shifter);
+		_pflex->freeShifter(_rx_shifter);
+		_tx_shifter = 0xff;
 
 		_pflex->removeIOHandlerCallback(this);
 		_pflex = nullptr;	
@@ -155,11 +166,11 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 	if (_bitOrder != settings._bitOrder) {
 		_bitOrder = settings._bitOrder;
 		if (_bitOrder == MSBFIRST) {
-			_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_shifter];
-			_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_shifter+1];;
+			_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_tx_shifter];
+			_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_rx_shifter];;
 		} else {
-			_shiftBufOutReg = &_pflex->port().SHIFTBUF[_shifter];
-			_shiftBufInReg = &_pflex->port().SHIFTBUFBYS[_shifter+1];;			
+			_shiftBufOutReg = &_pflex->port().SHIFTBUF[_tx_shifter];
+			_shiftBufInReg = &_pflex->port().SHIFTBUFBYS[_rx_shifter];;			
 		}
 
 	}
@@ -185,11 +196,10 @@ uint8_t FlexSPI::transfer(uint8_t b)
 	*_shiftBufOutReg = b;
 
 	// Now lets wait for something to come back.
-	uint8_t rx_shifter_mask = _shifter_mask << 1;	// n+1 port
 	uint16_t timeout = 0xffff;	// don't completely hang
-	while (!(_pflex->port().SHIFTSTAT & rx_shifter_mask) && (--timeout)) ;
+	while (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && (--timeout)) ;
 
-	if (_pflex->port().SHIFTSTAT & rx_shifter_mask) {
+	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
 		return_val = *_shiftBufInReg & 0xff;
 	}
 
@@ -205,11 +215,10 @@ uint16_t FlexSPI::transfer16(uint16_t w)
 	*_shiftBufOutReg = w;
 
 	// Now lets wait for something to come back.
-	uint8_t rx_shifter_mask = _shifter_mask << 1;	// n+1 port
 	uint16_t timeout = 0xffff;	// don't completely hang
-	while (!(_pflex->port().SHIFTSTAT & rx_shifter_mask) && (--timeout)) ;
+	while (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && (--timeout)) ;
 
-	if (_pflex->port().SHIFTSTAT & rx_shifter_mask) {
+	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
 		return_val = *_shiftBufInReg & 0xffff;
 	}
 
@@ -226,15 +235,14 @@ void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	uint8_t *rx_buffer = (uint8_t*)retbuf;
 	uint8_t ch_out = tx_buffer? *tx_buffer++ : _transferWriteFill;
 
-	uint8_t rx_shifter_mask = _shifter_mask << 1;	// n+1 port
 	while (rx_count) {
-		if ((tx_count) && (_pflex->port().SHIFTSTAT & _shifter_mask)) {
+		if ((tx_count) && (_pflex->port().SHIFTSTAT & _tx_shifter_mask)) {
 			*_shiftBufOutReg = ch_out;
 			if (tx_buffer) 
 				ch_out = *tx_buffer++;
 			tx_count--;
 		}
-		if (_pflex->port().SHIFTSTAT & rx_shifter_mask) {
+		if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
 			uint8_t ch = *_shiftBufInReg & 0xff;
 			if (rx_buffer) 
 				*rx_buffer++ = ch;
@@ -250,3 +258,181 @@ bool FlexSPI::call_back (FlexIOHandler *pflex) {
 //	DEBUG_digitalWriteFast(4, HIGH);
 	return false;  // right now always return false... 
 }
+
+//=============================================================================
+// ASYNCH Support
+//=============================================================================
+//=========================================================================
+// Try Transfer using DMA.
+//=========================================================================
+static uint8_t bit_bucket;
+#define dontInterruptAtCompletion(dmac) (dmac)->TCD->CSR &= ~DMA_TCD_CSR_INTMAJOR
+
+//=========================================================================
+// Init the DMA channels
+//=========================================================================
+bool FlexSPI::initDMAChannels() {
+	// Allocate our channels. 
+	_dmaTX = new DMAChannel();
+	if (_dmaTX == nullptr) {
+		return false;
+	}
+
+	_dmaRX = new DMAChannel();
+	if (_dmaRX == nullptr) {
+		delete _dmaTX; // release it
+		_dmaTX = nullptr; 
+		return false;
+	}
+
+	int iFlexIndex = _pflex->FlexIOIndex();
+	// Let's setup the RX chain
+	_dmaRX->disable();
+	_dmaRX->source((volatile uint8_t&)*_shiftBufInReg);
+	_dmaRX->disableOnCompletion();
+	_dmaRX->triggerAtHardwareEvent(_pflex->shiftersDMAChannel(_rx_shifter));
+	if (iFlexIndex == 0) {
+		_dmaRX->attachInterrupt(&_dma_rxISR0);
+		_dmaActiveObjects[0] = this;
+	} else {
+		_dmaRX->attachInterrupt(&_dma_rxISR1);
+		_dmaActiveObjects[1] = this;
+	}
+	_dmaRX->interruptAtCompletion();
+
+	// We may be using settings chain here so lets set it up. 
+	// Now lets setup TX chain.  Note if trigger TX is not set
+	// we need to have the RX do it for us.
+	_dmaTX->disable();
+	_dmaTX->destination((volatile uint8_t&)*_shiftBufOutReg);
+	_dmaTX->disableOnCompletion();
+
+	_dmaTX->triggerAtHardwareEvent(_pflex->shiftersDMAChannel(_tx_shifter));
+
+	_dma_state = DMAState::idle;  // Should be first thing set!
+	return true;
+}
+
+//=========================================================================
+// Main Async Transfer function
+//=========================================================================
+#ifdef DEBUG_DMA_TRANSFERS
+void dumpDMA_TCD(DMABaseClass *dmabc)
+{
+	Serial4.printf("%x %x:", (uint32_t)dmabc, (uint32_t)dmabc->TCD);
+
+	Serial4.printf("SA:%x SO:%d AT:%x NB:%x SL:%d DA:%x DO: %d CI:%x DL:%x CS:%x BI:%x\n", (uint32_t)dmabc->TCD->SADDR,
+		dmabc->TCD->SOFF, dmabc->TCD->ATTR, dmabc->TCD->NBYTES, dmabc->TCD->SLAST, (uint32_t)dmabc->TCD->DADDR, 
+		dmabc->TCD->DOFF, dmabc->TCD->CITER, dmabc->TCD->DLASTSGA, dmabc->TCD->CSR, dmabc->TCD->BITER);
+}
+#endif
+
+bool FlexSPI::transfer(const void *buf, void *retbuf, size_t count, EventResponderRef event_responder) {
+	if (_dma_state == DMAState::notAllocated) {
+		if (!initDMAChannels())
+			return false;
+	}
+
+	if (_dma_state == DMAState::active)
+		return false; // already active
+
+	event_responder.clearEvent();	// Make sure it is not set yet
+	if (count < 2) {
+		// Use non-async version to simplify cases...
+		transfer(buf, retbuf, count);
+		event_responder.triggerEvent();
+		return true;
+	}
+
+	// Now handle the cases where the count > then how many we can output in one DMA request
+	if (count > MAX_DMA_COUNT) {
+		_dma_count_remaining = count - MAX_DMA_COUNT;
+		count = MAX_DMA_COUNT;
+	} else {
+		_dma_count_remaining = 0;
+	}
+
+	// Now See if caller passed in a source buffer. 
+	_dmaTX->TCD->ATTR_DST = 0;		// Make sure set for 8 bit mode
+	uint8_t *write_data = (uint8_t*) buf;
+	if (buf) {
+		_dmaTX->sourceBuffer((uint8_t*)write_data, count);  
+		_dmaTX->TCD->SLAST = 0;	// Finish with it pointing to next location
+		if ((uint32_t)write_data >= 0x20200000u)  arm_dcache_flush(write_data, count);
+	} else {
+		_dmaTX->source((uint8_t&)_transferWriteFill);   // maybe have setable value
+		_dmaTX->transferCount(count);
+	}	
+	if (retbuf) {
+		// On T3.5 must handle SPI1/2 differently as only one DMA channel
+		_dmaRX->TCD->ATTR_SRC = 0;		//Make sure set for 8 bit mode...
+		_dmaRX->destinationBuffer((uint8_t*)retbuf, count);
+		_dmaRX->TCD->DLASTSGA = 0;		// At end point after our bufffer
+		if ((uint32_t)retbuf >= 0x20200000u)  arm_dcache_delete(retbuf, count);
+	} else {
+			// Write  only mode
+		_dmaRX->TCD->ATTR_SRC = 0;		//Make sure set for 8 bit mode...
+		_dmaRX->destination((uint8_t&)bit_bucket);
+		_dmaRX->transferCount(count);
+	}
+
+	_dma_event_responder = &event_responder;
+	// Now try to start it?
+	// Setup DMA main object
+	yield();
+
+#ifdef DEBUG_DMA_TRANSFERS
+	// Lets dump TX, RX
+	dumpDMA_TCD(_dmaTX);
+	dumpDMA_TCD(_dmaRX);
+#endif
+
+	// Lets turn on the DMA handling for this
+	_pflex->port().SHIFTSDEN |= _rx_shifter_mask | _tx_shifter_mask;
+
+	_dmaRX->enable();
+	_dmaTX->enable();
+
+	_dma_state = DMAState::active;
+	return true;
+}
+
+void FlexSPI::_dma_rxISR0(void) {
+	FlexSPI::_dmaActiveObjects[0]->dma_rxisr();
+}
+
+void FlexSPI::_dma_rxISR1(void) {
+	FlexSPI::_dmaActiveObjects[1]->dma_rxisr();
+}
+
+
+//-------------------------------------------------------------------------
+// DMA RX ISR
+//-------------------------------------------------------------------------
+void FlexSPI::dma_rxisr(void) {
+	_dmaRX->clearInterrupt();
+	_dmaTX->clearComplete();
+	_dmaRX->clearComplete();
+
+	if (_dma_count_remaining) {
+		// What do I need to do to start it back up again...
+		// We will use the BITR/CITR from RX as TX may have prefed some stuff
+		if (_dma_count_remaining > MAX_DMA_COUNT) {
+			_dma_count_remaining -= MAX_DMA_COUNT;
+		} else {
+			_dmaTX->transferCount(_dma_count_remaining);
+			_dmaRX->transferCount(_dma_count_remaining);
+
+			_dma_count_remaining = 0;
+		}
+		_dmaRX->enable();
+		_dmaTX->enable();
+	} else {
+
+		_pflex->port().SHIFTSDEN &= ~(_rx_shifter_mask | _tx_shifter_mask);  // turn off DMA on both RX and TX
+		_dma_state = DMAState::completed;   // set back to 1 in case our call wants to start up dma again
+		_dma_event_responder->triggerEvent();
+
+	}
+}
+
