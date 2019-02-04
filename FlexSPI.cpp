@@ -235,8 +235,8 @@ void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	uint8_t ch_out = tx_buffer? *tx_buffer++ : _transferWriteFill;
 	if (count <= 0) return;	// bail if 0 count passed in.
 
-#if 1
 	// put out the first character. 
+	_pflex->port().SHIFTERR = _rx_shifter_mask | _tx_shifter_mask;	// clear out any previous errors
 	while (!(_pflex->port().SHIFTSTAT & _tx_shifter_mask))  ; // wait for room for the first character
 	*_shiftBufOutReg = ch_out;
 	if (tx_buffer) 
@@ -256,29 +256,11 @@ void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 		if (rx_buffer) 
 			*rx_buffer++ = ch;
 	}
-	// wait for last character to come back... 
-	while  (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask)) ;
+	// wait for last character to come back...  
+	while  (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && !(_pflex->port().SHIFTERR & _rx_shifter_mask)) ;
 	uint8_t ch = *_shiftBufInReg & 0xff;
 	if (rx_buffer) 
 		*rx_buffer++ = ch;
-#else
-
-	uint32_t rx_count = count;
-	while (rx_count) {
-		if ((tx_count) && (_pflex->port().SHIFTSTAT & _tx_shifter_mask)) {
-			*_shiftBufOutReg = ch_out;
-			if (tx_buffer) 
-				ch_out = *tx_buffer++;
-			tx_count--;
-		}
-		if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
-			uint8_t ch = *_shiftBufInReg & 0xff;
-			if (rx_buffer) 
-				*rx_buffer++ = ch;
-			rx_count--;
-		}
-	}
-#endif
 }
 
 
