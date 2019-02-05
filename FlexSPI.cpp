@@ -230,7 +230,7 @@ uint16_t FlexSPI::transfer16(uint16_t w)
 
 void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	uint32_t tx_count = count;
-	uint8_t *tx_buffer = (uint8_t*)buf;
+	const uint8_t *tx_buffer = (const uint8_t*)buf;
 	uint8_t *rx_buffer = (uint8_t*)retbuf;
 	uint8_t ch_out = tx_buffer? *tx_buffer++ : _transferWriteFill;
 	if (count <= 0) return;	// bail if 0 count passed in.
@@ -241,7 +241,7 @@ void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	*_shiftBufOutReg = ch_out;
 	if (tx_buffer) 
 		ch_out = *tx_buffer++;
-
+	tx_count--;
 	while (tx_count) {
 		 // wait for room for the next character
 		while (!(_pflex->port().SHIFTSTAT & _tx_shifter_mask))  ;
