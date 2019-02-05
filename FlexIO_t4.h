@@ -34,6 +34,9 @@
 #if !defined(__IMXRT1052__) && !defined(__IMXRT1062__)
 #error "Sorry, Flex IO only works on Teensy 4.x boards"
 #endif
+
+// Move into imxrt
+#ifndef IMXRT_FLEXIO1_S
 typedef struct {
 	const 	uint32_t VERID;				// 0x00	(IMXRT_FLEXIO1.offset000)
 	volatile uint32_t PARAM;			// 0x04	// (IMXRT_FLEXIO1.offset004)
@@ -79,7 +82,7 @@ typedef struct {
 #define IMXRT_FLEXIO1_S		(*(IMXRT_FLEXIO_t *)0x401AC000)
 #define IMXRT_FLEXIO2_S		(*(IMXRT_FLEXIO_t *)0x401B0000)
 //#define IMXRT_FLEXIO3		(*(IMXRT_REGISTER32_t *)0x42020000) only RT1062
-
+#endif
 
 // forward reference
 class FlexIOHandler; 
