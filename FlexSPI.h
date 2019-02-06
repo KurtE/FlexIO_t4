@@ -46,6 +46,7 @@
 #define SPI_MODE2 0x08
 #define SPI_MODE3 0x0C
 #endif
+#define SPI_MODE_TRANSMIT_ONLY 0x80 	// Hack to allow higher speeds when transmit only 
 
 // Pretty stupid settings for now...
 class FlexSPISettings {

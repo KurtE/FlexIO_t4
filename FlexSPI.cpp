@@ -151,8 +151,9 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 	#endif
 
 	// right now pretty stupid
-	if (settings._clock != _clock) {
+	if ((settings._clock != _clock) || (settings._dataMode != _dataMode )) {
 		_clock = settings._clock;
+		_dataMode = settings._dataMode;
 
 		uint32_t clock_speed = _pflex->computeClockRate() / 2;   // get speed divide by 
 		uint32_t div = clock_speed / _clock;
@@ -160,9 +161,12 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 			if ((clock_speed / div)  > _clock) div++;	// unless even multiple increment
 			div--;		// the actual value stored is the -1...	
 		}
-		if (div == 0)  {
-			div = 1;	// force to at least one as Reads will fail at 0...
-		} 
+		if (!(_dataMode & SPI_MODE_TRANSMIT_ONLY)) {
+			if (div == 0)  
+				div = 1;	// force to at least one as Reads will fail at 0...
+		 	else if ((div == 1) && (_clock > 30000000u))
+		 		div = 2;
+		}
 		_pflex->port().TIMCMP[_timer] = div | 0x0f00; // Set the speed and set into 8 bit mode
 #ifdef DEBUG_FlexSPI
 		DEBUG_FlexSPI.printf("flexspi:beginTransaction TIMCMP: %x\n", _pflex->port().TIMCMP[_timer]);
