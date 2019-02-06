@@ -2,7 +2,7 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
-//#define DEBUG_FlexSPI Serial4
+//#define DEBUG_FlexSPI Serial
 #define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalWriteFast(pin, state) 
 FlexSPI  *FlexSPI::_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT] = {nullptr, nullptr};
@@ -160,7 +160,13 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 			if ((clock_speed / div)  > _clock) div++;	// unless even multiple increment
 			div--;		// the actual value stored is the -1...	
 		}
+		if (div == 0)  {
+			div = 1;	// force to at least one as Reads will fail at 0...
+		} 
 		_pflex->port().TIMCMP[_timer] = div | 0x0f00; // Set the speed and set into 8 bit mode
+#ifdef DEBUG_FlexSPI
+		DEBUG_FlexSPI.printf("flexspi:beginTransaction TIMCMP: %x\n", _pflex->port().TIMCMP[_timer]);
+#endif
 	}
 
 	if (_bitOrder != settings._bitOrder) {
@@ -192,11 +198,18 @@ void FlexSPI::endTransaction(void) {
 uint8_t FlexSPI::transfer(uint8_t b) 
 {
 	// Need to do some validation...
-	uint8_t return_val = 0xff;
-	*_shiftBufOutReg = b;
+	uint8_t return_val ;
 
 	// Now lets wait for something to come back.
 	uint16_t timeout = 0xffff;	// don't completely hang
+	// Clear any current pending RX input 
+	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
+		return_val = *_shiftBufInReg;
+	}
+
+	*_shiftBufOutReg = b;
+
+	return_val = 0xff;
 	while (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && (--timeout)) ;
 
 	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
