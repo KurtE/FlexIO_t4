@@ -56,9 +56,9 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
 
-	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff,
+	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
@@ -66,9 +66,9 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	IRQ_FLEXIO2, 
 	IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
-	6,       7,    8,    9,  10,    11,   12,   13,   32,
-	10,     17,   16,   11,  0,      2,    1,    3,   12,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
+	6,       7,    8,    9,  10,    11,   12,   13,   32, 0xff, 0xff, 0xff, 0xff, 0xff,
+	10,     17,   16,   11,  0,      2,    1,    3,   12, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
@@ -76,9 +76,9 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	IRQ_FLEXIO3, 
 	IRQHandler_FlexIO3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32,
-	10,     17,   16,   11,  0,      2,    1,    3,   12,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
+	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   
+	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
+	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19,
 };
 
 
@@ -169,20 +169,32 @@ FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex
 
 	for (uint8_t iflex = 0; iflex < (sizeof(flex_list) / sizeof(flex_list[0])); iflex++) {
 		pflex = flex_list[iflex];
-
-		for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
-	  		if (pflex->hardware().io_pin[i] == pin) {
-	    		flex_pin = pflex->hardware().flex_pin[i];
-				#ifdef DEBUG_FlexIO
-				Serial.println("Enable flexio clock");
-				#endif
-				pflex->hardware().clock_gate_register |= pflex->hardware().clock_gate_mask;
-	    		return pflex;
-	  		}
+		flex_pin = pflex->mapIOPinToFlexPin(pin);
+		if (flex_pin != 0xff) {
+			return pflex;
 		}
 	}
-	flex_pin = 0xff;
 	return nullptr;
+}
+
+//-----------------------------------------------------------------------------
+// Map IO pins to their Flex object and the flex pin 
+//-----------------------------------------------------------------------------
+uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
+{
+
+  	// Now lets walk through all of the pins associated with this object. 
+	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
+  		if (hardware().io_pin[i] == pin) {
+			#ifdef DEBUG_FlexIO
+			Serial.println("Enable flexio clock");
+			#endif
+			hardware().clock_gate_register |= hardware().clock_gate_mask;
+
+			return hardware().flex_pin[i];
+		}
+	}
+	return 0xff;
 }
 
 //-----------------------------------------------------------------------------
@@ -228,9 +240,11 @@ uint8_t FlexIOHandler::requestTimers(uint8_t cnt) {
 uint8_t FlexIOHandler::requestShifter(uint8_t not_dma_channel) {
 	uint8_t mask = 0x1 ;
 	for (uint8_t i = 0; i < 4; i++) {
-		if (!(_used_shifters & mask) && (hardware().shifters_dma_channel[i] != not_dma_channel)) {
-	  		_used_shifters |= mask;
-	  		return i;
+		if (!(_used_shifters & mask)) {
+			if ((not_dma_channel == 0xff) || (hardware().shifters_dma_channel[i] != not_dma_channel)) {
+	  			_used_shifters |= mask;
+	  			return i;
+	  		}
 		}
 		mask <<= 1;
 	}

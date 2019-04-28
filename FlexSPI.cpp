@@ -17,16 +17,49 @@ bool FlexSPI::begin() {
 	// Make sure all of the IO pins are valid flex pins on same controller
 	//-------------------------------------------------------------------------
 	_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_mosiPin, _mosi_flex_pin);
-	FlexIOHandler *sck_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_sckPin, _sck_flex_pin);
-	FlexIOHandler *miso_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_misoPin, _miso_flex_pin);
-	FlexIOHandler *cs_flex = _pflex;
-	if (_csPin != -1)
-		cs_flex = FlexIOHandler::mapIOPinToFlexIOHandler(_csPin, _cs_flex_pin);
-
-	// Make sure all of the pins map to same Flex IO controller
-	if (!_pflex  || (_pflex != sck_flex) || (_pflex != miso_flex) || (_pflex != cs_flex)) {
-		Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+	if (_pflex) {
+		Serial.printf("FlexSPI - Mosi pin does not map to flex controller\n");
 		return false;
+	}
+
+	// Lets try mapping the others to this one.
+	_sck_flex_pin = _pflex->mapIOPinToFlexPin(_sckPin);
+ 	_miso_flex_pin = _pflex->mapIOPinToFlexPin(_misoPin);
+
+ 	// Lets see if they all mapped to same to same controller.
+ 	if ((_sck_flex_pin == 0xff) || (_miso_flex_pin == 0xff)) {
+		#if defined(__IMXRT1062__)
+ 		// Note this par
+ 		if (_sck_flex_pin == 0xff) {
+			_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_sck_flex_pin, _sck_flex_pin);
+ 		} else {
+			_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_miso_flex_pin, _miso_flex_pin); 			
+ 		}
+ 		if (!_pflex) {
+			Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+			return false;
+ 		}
+
+		_mosi_flex_pin = _pflex->mapIOPinToFlexPin(_mosiPin);
+		_sck_flex_pin = _pflex->mapIOPinToFlexPin(_sckPin);
+		_miso_flex_pin = _pflex->mapIOPinToFlexPin(_misoPin);
+ 		if ((_sck_flex_pin == 0xff) || (_miso_flex_pin == 0xff) || (_mosi_flex_pin == 0xff)) {
+			Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+			return false;
+ 		}
+ 		#else
+ 			// 1052 don't have pins that map to different FLEXIO controllers
+			Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+			return false;
+ 		#endif
+ 	}
+	FlexIOHandler *cs_flex = _pflex;
+	if (_csPin != -1) {
+		_cs_flex_pin = _pflex->mapIOPinToFlexPin(_csPin);
+		if (_cs_flex_pin == 0xff) {
+			Serial.printf("FlexSPI - not all pins(CS) mapped to same Flex controller\n");
+			return false;			
+		}
 	}
 
 	// Now reserve timers and shifters

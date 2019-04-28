@@ -45,9 +45,14 @@ public:
 
 class FlexIOHandler {
 public:
-	static const uint8_t CNT_FLEX_PINS = 9;
 	static const uint8_t CNT_SHIFTERS = 4;
-	static const uint8_t CNT_FLEX_IO_OBJECT = 2;	// TODO: will be different on other chip
+#if defined(__IMXRT1062__)
+	static const uint8_t CNT_FLEX_PINS = 14;
+	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
+#else
+	static const uint8_t CNT_FLEX_PINS = 9;
+	static const uint8_t CNT_FLEX_IO_OBJECT = 2;
+#endif
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
 		const uint32_t clock_gate_mask;
@@ -68,7 +73,12 @@ public:
   constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list)
   	: port_addr(myport), hardware_addr(myhardware), _callback_list_addr(callback_list) {
   }
-  static FlexIOHandler *mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex_pin);
+
+  	// A static one that can map across all FlexIO controller
+    static FlexIOHandler *mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex_pin);
+
+    // A simple one that maps within a controller
+  	uint8_t mapIOPinToFlexPin(uint8_t);
 
 	IMXRT_FLEXIO_t & port() { return *(IMXRT_FLEXIO_t *)port_addr; }
 	const FLEXIO_Hardware_t & hardware() { return *(const FLEXIO_Hardware_t *)hardware_addr; }

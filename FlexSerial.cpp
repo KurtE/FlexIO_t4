@@ -31,11 +31,11 @@ bool FlexSerial::begin(uint32_t baud) {
 		_tx_timer = _tx_pflex->requestTimers();
 		_tx_shifter = _tx_pflex->requestShifter();
 		if ((_tx_timer == 0xff) || (_tx_shifter == 0xff)) {
+			Serial.printf("FlexSerial - Failed to allocate TX timer(%d) or shifter(%d)\n", _tx_timer, _tx_shifter);
 			_tx_pflex->freeTimers(_tx_timer);
 			_tx_timer = 0xff;
 			_tx_pflex->freeShifter(_tx_shifter);
 			_tx_shifter = 0xff;
-			Serial.println("FlexSerial - Failed to allocate TX timer or shifter");
 			return false;
 		}
 
