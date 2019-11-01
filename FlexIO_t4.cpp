@@ -110,6 +110,7 @@ void IRQHandler_FlexIO2() {
 		if (*ppfhc) {
 			if ((*ppfhc)->call_back(&flexIO2)) return;
 		}
+		ppfhc++;
 	}
 	flexIO2.IRQHandler();
 	 asm("dsb");
@@ -121,6 +122,7 @@ void IRQHandler_FlexIO3() {
 		if (*ppfhc) {
 			if ((*ppfhc)->call_back(&flexIO3)) return;
 		}
+		ppfhc++;
 	}
 	flexIO3.IRQHandler();
 	 asm("dsb");
