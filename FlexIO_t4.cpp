@@ -29,6 +29,7 @@
 //-----------------------------------------------------------------------------
 // Include files
 //-----------------------------------------------------------------------------
+#if defined(__IMXRT1062__)
 #include "FlexIO_t4.h"
 
 
@@ -38,18 +39,16 @@
 //-----------------------------------------------------------------------------
 extern void IRQHandler_FlexIO1();
 extern void IRQHandler_FlexIO2();
+extern void IRQHandler_FlexIO3();
 
 FlexIOHandlerCallback *flex1_Handler_callbacks[4] = {nullptr, nullptr, nullptr, nullptr};
 FlexIOHandlerCallback *flex2_Handler_callbacks[4] = {nullptr, nullptr, nullptr, nullptr};
-#if defined(__IMXRT1062__)
-extern void IRQHandler_FlexIO3();
 FlexIOHandlerCallback *flex3_Handler_callbacks[4] = {nullptr, nullptr, nullptr, nullptr};
-#endif
+
 //-----------------------------------------------------------------------------
 // T4 Beta 2 board and probably release
 //-----------------------------------------------------------------------------
 
-#if defined(__IMXRT1062__)
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
 	IRQ_FLEXIO1, 
@@ -84,41 +83,10 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 
 static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks);
 static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks);
-static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks);
+static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks);
 
 static FlexIOHandler *flex_list[] = {&flexIO1, &flexIO2, &flexIO3};
 
-//-----------------------------------------------------------------------------
-// T4 Beta 1 board
-//-----------------------------------------------------------------------------
-#else
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
-	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
-	IRQ_FLEXIO1, 
-	&IRQHandler_FlexIO1,
-	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
-
-	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    7,  8,   0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff,
-};
-
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
-	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
-	IRQ_FLEXIO2, 
-	IRQHandler_FlexIO2,
-	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
-	6,       7,    8,    9,  10,    11,   12,   13,   32,
-	17,     16,   10,   11,  0,      2,    1,    3,   12,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
-};
-
-
-static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks);
-static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks);
-
-static FlexIOHandler *flex_list[] = {&flexIO1, &flexIO2};
-#endif
 
 //-----------------------------------------------------------------------------
 // Interrupt functions
@@ -140,14 +108,13 @@ void IRQHandler_FlexIO2() {
 	FlexIOHandlerCallback **ppfhc = flex2_Handler_callbacks;
 	for (uint8_t i = 0; i < 4; i++) {
 		if (*ppfhc) {
-			if ((*ppfhc)->call_back(&flexIO1)) return;
+			if ((*ppfhc)->call_back(&flexIO2)) return;
 		}
 	}
 	flexIO2.IRQHandler();
 	 asm("dsb");
 }
 
-#if defined(__IMXRT1062__)
 void IRQHandler_FlexIO3() {
 	FlexIOHandlerCallback **ppfhc = flex3_Handler_callbacks;
 	for (uint8_t i = 0; i < 4; i++) {
@@ -155,10 +122,9 @@ void IRQHandler_FlexIO3() {
 			if ((*ppfhc)->call_back(&flexIO3)) return;
 		}
 	}
-	flexIO2.IRQHandler();
+	flexIO3.IRQHandler();
 	 asm("dsb");
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Map IO pins to their Flex object and the flex pin 
@@ -384,3 +350,4 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 		hardware().clock_gate_register |= hardware().clock_gate_mask;
 	}
 }
+#endif

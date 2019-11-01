@@ -31,7 +31,7 @@
 #ifndef _FLEX_IO_T4_H_
 #define _FLEX_IO_T4_H_
 #include <Arduino.h>
-#if !defined(__IMXRT1052__) && !defined(__IMXRT1062__)
+#if !defined(__IMXRT1062__)
 #error "Sorry, Flex IO only works on Teensy 4.x boards"
 #endif
 
