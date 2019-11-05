@@ -85,7 +85,7 @@ static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHand
 static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks);
 static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks);
 
-static FlexIOHandler *flex_list[] = {&flexIO1, &flexIO2, &flexIO3};
+FlexIOHandler *FlexIOHandler::flexIOHandler_list[] = {&flexIO1, &flexIO2, &flexIO3};
 
 
 //-----------------------------------------------------------------------------
@@ -93,6 +93,7 @@ static FlexIOHandler *flex_list[] = {&flexIO1, &flexIO2, &flexIO3};
 //-----------------------------------------------------------------------------
 void IRQHandler_FlexIO1() {
 	FlexIOHandlerCallback **ppfhc = flex1_Handler_callbacks;
+	Serial.printf("FI1: %x %x %x ", FLEXIO1_SHIFTSTAT, FLEXIO1_SHIFTSIEN, FLEXIO1_SHIFTERR);
 	for (uint8_t i = 0; i < 4; i++) {
 		if (*ppfhc) {
 			if ((*ppfhc)->call_back(&flexIO1)) return;
@@ -100,6 +101,7 @@ void IRQHandler_FlexIO1() {
 		ppfhc++;
 	}
 	flexIO1.IRQHandler();
+	Serial.printf(" %x %x %x\n", FLEXIO1_SHIFTSTAT, FLEXIO1_SHIFTSIEN, FLEXIO1_SHIFTERR);
 	 asm("dsb");
 }
 
@@ -135,8 +137,8 @@ FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex
 {
   FlexIOHandler *pflex = nullptr;
 
-	for (uint8_t iflex = 0; iflex < (sizeof(flex_list) / sizeof(flex_list[0])); iflex++) {
-		pflex = flex_list[iflex];
+	for (uint8_t iflex = 0; iflex < (sizeof(flexIOHandler_list) / sizeof(flexIOHandler_list[0])); iflex++) {
+		pflex = flexIOHandler_list[iflex];
 		flex_pin = pflex->mapIOPinToFlexPin(pin);
 		if (flex_pin != 0xff) {
 			return pflex;
@@ -181,8 +183,8 @@ bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
 // return the index of the ojbect 1:->0 2:->1 later 3:->2
 int FlexIOHandler::FlexIOIndex()	
 {
-	for (uint8_t iflex = 0; iflex < (sizeof(flex_list) / sizeof(flex_list[0])); iflex++) {
-		if (flex_list[iflex] == this) return iflex;
+	for (uint8_t iflex = 0; iflex < (sizeof(flexIOHandler_list) / sizeof(flexIOHandler_list[0])); iflex++) {
+		if (flexIOHandler_list[iflex] == this) return iflex;
 	}
 	return -1;
 }
@@ -224,6 +226,22 @@ uint8_t FlexIOHandler::shiftersDMAChannel(uint8_t n) {
 	return 0xff; 
 }
 
+bool FlexIOHandler::claimTimer(uint8_t timer) {
+	uint8_t mask = 1<<timer;
+	if (!(_used_timers & mask)) {
+		_used_timers |= mask;
+		return true;
+	}
+	return false;
+}
+bool FlexIOHandler::claimShifter(uint8_t shifter) {
+	uint8_t mask = 1<<shifter;
+	if (!(_used_shifters & mask)) {
+		_used_shifters |= mask;
+		return true;
+	}
+	return false;	
+}
 
 void FlexIOHandler::IRQHandler() {
   

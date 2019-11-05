@@ -53,7 +53,7 @@ bool FlexSPI::begin() {
 			return false;
  		#endif
  	}
-	FlexIOHandler *cs_flex = _pflex;
+	//FlexIOHandler *cs_flex = _pflex;
 	if (_csPin != -1) {
 		_cs_flex_pin = _pflex->mapIOPinToFlexPin(_csPin);
 		if (_cs_flex_pin == 0xff) {

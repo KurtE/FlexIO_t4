@@ -76,6 +76,7 @@ public:
 
   	// A static one that can map across all FlexIO controller
     static FlexIOHandler *mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex_pin);
+	static FlexIOHandler *flexIOHandler_list[3];
 
     // A simple one that maps within a controller
   	uint8_t mapIOPinToFlexPin(uint8_t);
@@ -87,6 +88,8 @@ public:
 	uint8_t requestTimers(uint8_t cnt=1);
 	uint8_t requestShifter(uint8_t not_dma_channel=0xff);
 	uint8_t shiftersDMAChannel(uint8_t n);
+	bool claimTimer(uint8_t timer);
+	bool claimShifter(uint8_t shifter);   
 
 	void freeTimers(uint8_t n, uint8_t cnt=1);
 	void freeShifter(uint8_t n);
