@@ -36,11 +36,21 @@ class FlexSerial : public Stream, public FlexIOHandlerCallback
 {
 public:
 	enum {TX_BUFFER_SIZE=64, RX_BUFFER_SIZE=40};
-	FlexSerial(int rxPin=-1, int txPin=-1, bool inverse_logic = false) :
-		_rxPin(rxPin), _txPin(txPin) {};
+	FlexSerial(int rxPin=-1, int txPin=-1, 
+			uint8_t rx_flex=-1, uint8_t rx_timer=-1, uint8_t rx_shifter=-1, 
+			uint8_t tx_flex=-1, uint8_t tx_timer=-1, uint8_t tx_shifter=-1) :
+		_rxPin(rxPin), _txPin(txPin), 
+		_rx_timer(rx_timer), _rx_shifter(rx_shifter), _tx_timer(tx_timer), _tx_shifter(tx_shifter)
+	{
+		if (rx_flex < (sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0])))
+			_rx_pflex = FlexIOHandler::flexIOHandler_list[rx_flex];
+		if (tx_flex < (sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0])))
+			_tx_pflex = FlexIOHandler::flexIOHandler_list[tx_flex];
+	}	 
+	
 
 	~FlexSerial() { end(); }
-	bool begin(uint32_t baud);
+	bool begin(uint32_t baud, bool inverse_logic = false);
 	void end(void);
 
 	virtual int available(void);
@@ -55,17 +65,26 @@ public:
 
 	// Call back from flexIO when ISR hapens
 	virtual bool call_back (FlexIOHandler *pflex);
+	FlexIOHandler  *flexIOHandlerTX() {return _tx_pflex;}
+	FlexIOHandler  *flexIOHandlerRX() {return _rx_pflex;}
+
 
 
 private:
 	int _rxPin;
 	int _txPin;
 
+	// others that get passed through constructor
+	uint8_t 		_rx_timer;
+	uint8_t 		_rx_shifter;
+
+	uint8_t 		_tx_timer;
+	uint8_t 		_tx_shifter;
+
 	// Variables for tranmitter
 	FlexIOHandler *_tx_pflex = nullptr;
+
 	uint8_t 		_tx_flex_pin;
-	uint8_t 		_tx_timer = 0xff;
-	uint8_t 		_tx_shifter = 0xff;
 	uint8_t 		_tx_shifter_mask;
 	uint8_t			_tx_buffer[TX_BUFFER_SIZE];
 	uint16_t		_tx_buffer_head = 0;
@@ -74,8 +93,6 @@ private:
 	// Variables for receiver
 	FlexIOHandler *_rx_pflex = nullptr;
 	uint8_t 		_rx_flex_pin;
-	uint8_t 		_rx_timer = 0xff;
-	uint8_t 		_rx_shifter = 0xff;
 	uint8_t 		_rx_shifter_mask;
 	uint8_t			_rx_buffer[RX_BUFFER_SIZE];
 	uint16_t		_rx_buffer_head = 0;

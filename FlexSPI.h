@@ -27,6 +27,9 @@
  */
 #include <Arduino.h>
 #include "FlexIO_t4.h"
+#include <DMAChannel.h>
+#include <EventResponder.h>
+
 #ifndef _FLEX_SPI_H_
 #define _FLEX_SPI_H_
 
@@ -43,6 +46,7 @@
 #define SPI_MODE2 0x08
 #define SPI_MODE3 0x0C
 #endif
+#define SPI_MODE_TRANSMIT_ONLY 0x80 	// Hack to allow higher speeds when transmit only 
 
 // Pretty stupid settings for now...
 class FlexSPISettings {
@@ -73,6 +77,13 @@ public:
 	void setTransferWriteFill(uint8_t ch ) {_transferWriteFill = ch;}
 	void transfer(const void * buf, void * retbuf, size_t count);
 
+	// Asynch support (DMA )
+	bool transfer(const void *txBuffer, void *rxBuffer, size_t count,  EventResponderRef  event_responder);
+
+	static void _dma_rxISR0(void);
+	static void _dma_rxISR1(void);
+	inline void dma_rxisr(void);
+
 	void beginTransaction(FlexSPISettings settings);
 	void endTransaction(void);
 
@@ -95,6 +106,9 @@ private:
 	uint32_t 		_clock = 0;
 	uint8_t 		_bitOrder = MSBFIRST;
 	uint8_t			_dataMode = SPI_MODE0;
+	volatile uint32_t *_shiftBufInReg = nullptr;
+	volatile uint32_t *_shiftBufOutReg = nullptr;
+
 
 	// FlexIO variables.
 	FlexIOHandler  *_pflex = nullptr;
@@ -103,9 +117,20 @@ private:
 	uint8_t 		_miso_flex_pin = 0xff;
 	uint8_t 		_cs_flex_pin = 0xff;
 	uint8_t 		_timer = 0xff;
-	uint8_t 		_shifter = 0xff;
-	uint8_t 		_shifter_mask = 0;
+	uint8_t 		_tx_shifter = 0xff;
+	uint8_t 		_tx_shifter_mask = 0;
+	uint8_t 		_rx_shifter = 0xff;
+	uint8_t 		_rx_shifter_mask = 0;
 
-	
+	// DMA - Async support
+	bool initDMAChannels();
+	enum DMAState { notAllocated, idle, active, completed};
+	enum {MAX_DMA_COUNT=32767};
+	DMAState     	_dma_state = DMAState::notAllocated;
+	uint32_t		_dma_count_remaining = 0;	// How many bytes left to output after current DMA completes
+	DMAChannel   	*_dmaTX = nullptr;
+	DMAChannel    	*_dmaRX = nullptr;
+	EventResponder *_dma_event_responder = nullptr;
+	static FlexSPI  *_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT];
 };
 #endif //_FLEX_SPI_H_
