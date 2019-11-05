@@ -40,7 +40,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		if (p == &IMXRT_FLEXIO1_S) Serial.print("(FLEXIO1)");
 		else if (p == &IMXRT_FLEXIO2_S) Serial.print("(FLEXIO2)");
 		else if (p == &IMXRT_FLEXIO3_S) Serial.print("(FLEXIO3)");
-		Serial.printf(" pin %x\n", _tx_flex_pin);  Serial.flush();
+		Serial.printf(" pin %u\n", _tx_flex_pin);  Serial.flush();
 #endif		
 		if (_tx_timer <= 3) {
 			if (!_tx_pflex->claimTimer(_tx_timer)) {
@@ -337,9 +337,20 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 	// See if we we have a TX event
 	if (pflex == _tx_pflex) {
 		if ((p->SHIFTSTAT & _tx_shifter_mask) && (p->SHIFTSIEN & _tx_shifter_mask)) {
-			if (p == &IMXRT_FLEXIO1_S) Serial.print(_tx_flex_pin, DEC);
+			#ifdef DEBUG_FlexSerial
+			if (p == &IMXRT_FLEXIO1_S) Serial.print(_txPin, DEC);
+			#endif
 			DEBUG_digitalWriteFast(6, HIGH);
 			if (_tx_buffer_head != _tx_buffer_tail) {
+				#ifdef DEBUG_FlexSerial
+				if (p == &IMXRT_FLEXIO1_S) {
+					if ((_tx_buffer[_tx_buffer_tail] >= ' ') &&	(_tx_buffer[_tx_buffer_tail] <= '~'))
+						Serial.printf("(%c)", _tx_buffer[_tx_buffer_tail]);
+					else
+						Serial.printf("(%02x)", _tx_buffer[_tx_buffer_tail]);
+
+				}
+				#endif
 				p->SHIFTBUF[_tx_shifter] = _tx_buffer[_tx_buffer_tail++] ;
 				if (_tx_buffer_tail >= TX_BUFFER_SIZE) _tx_buffer_tail = 0;
 			}
@@ -352,7 +363,9 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 			DEBUG_digitalWriteFast(6, LOW);
 		}
 		if (p->SHIFTERR & _tx_shifter_mask) {
-			if (p == &IMXRT_FLEXIO1_S) Serial.printf("%u$", _tx_flex_pin);
+			#ifdef DEBUG_FlexSerial
+			if (p == &IMXRT_FLEXIO1_S) Serial.printf("%u$", _txPin);
+			#endif
 			__disable_irq();
 			p->SHIFTERR = _tx_shifter_mask;  // Clear the error condition
 			p->SHIFTSTAT = _tx_shifter_mask;  // Clear the state value
