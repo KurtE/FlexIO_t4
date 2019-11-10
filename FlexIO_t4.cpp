@@ -93,7 +93,7 @@ FlexIOHandler *FlexIOHandler::flexIOHandler_list[] = {&flexIO1, &flexIO2, &flexI
 //-----------------------------------------------------------------------------
 void IRQHandler_FlexIO1() {
 	FlexIOHandlerCallback **ppfhc = flex1_Handler_callbacks;
-	Serial.printf("FI1: %x %x %x ", FLEXIO1_SHIFTSTAT, FLEXIO1_SHIFTSIEN, FLEXIO1_SHIFTERR);
+//	Serial.printf("FI1: %x %x %x ", FLEXIO1_SHIFTSTAT, FLEXIO1_SHIFTSIEN, FLEXIO1_SHIFTERR);
 	for (uint8_t i = 0; i < 4; i++) {
 		if (*ppfhc) {
 			if ((*ppfhc)->call_back(&flexIO1)) return;
@@ -101,7 +101,7 @@ void IRQHandler_FlexIO1() {
 		ppfhc++;
 	}
 	flexIO1.IRQHandler();
-	Serial.printf(" %x %x %x\n", FLEXIO1_SHIFTSTAT, FLEXIO1_SHIFTSIEN, FLEXIO1_SHIFTERR);
+//	Serial.printf(" %x %x %x\n", FLEXIO1_SHIFTSTAT, FLEXIO1_SHIFTSIEN, FLEXIO1_SHIFTERR);
 	 asm("dsb");
 }
 
