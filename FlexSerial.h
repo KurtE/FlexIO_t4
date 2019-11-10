@@ -89,6 +89,9 @@ private:
 	uint8_t			_tx_buffer[TX_BUFFER_SIZE];
 	uint16_t		_tx_buffer_head = 0;
 	uint16_t 		_tx_buffer_tail = 0;
+	volatile uint8_t	_transmitting = 0;
+	uint8_t			_tx_timer_mask = 0;
+	static const uint32_t FLUSH_TIMEOUT = 1000;	// 1 second... 
 
 	// Variables for receiver
 	FlexIOHandler *_rx_pflex = nullptr;

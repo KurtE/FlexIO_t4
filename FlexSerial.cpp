@@ -5,10 +5,14 @@
 //#define DEBUG_FlexSerial
 //#define DEBUG_FlexSerial_CALL_BACK
 //#define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
+//#define DEBUG_digitalToggleFast(pin)	digitalWriteFast(pin, !digitalReadFast(pin));
+
 #define DEBUG_digitalWriteFast(pin, state) 
+#define DEBUG_digitalToggleFast(pin)
 #define DEBUG_PIN_CALLBACK 30
 #define DEBUG_PIN_CALLBACK_READ 31
 #define DEBUG_PIN_CALLBACK_WRITE 32
+#define DEBUG_PIN_WRITE_TIMER_INT 29
 
 
 //=============================================================================
@@ -71,6 +75,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 
 
 		_tx_shifter_mask = 1 << _tx_shifter;
+		_tx_timer_mask = 1 << _tx_timer;
 
 #ifdef DEBUG_FlexSerial
 		Serial.printf("timer index: %d shifter index: %d mask: %x\n", _tx_timer, _tx_shifter, _tx_shifter_mask);
@@ -231,8 +236,14 @@ void FlexSerial::end(void) {
 void FlexSerial::flush(void) {
 	// I know this is not fully correct yet...
 	// May need to do one extra call back in ISR (at least)
-	//while (	_tx_pflex->port().SHIFTSIEN & _tx_shifter_mask) yield();  // disable interrupt on this one...
-
+	uint32_t start_time = millis();
+	while (_transmitting) {
+		if ((millis()-start_time) > FLUSH_TIMEOUT) {
+			Serial.println("*** FlexSerial::flush Timeout ***");
+			return;
+		}
+		yield(); // wait
+	}
 }
 
 size_t FlexSerial::write(uint8_t c) {
@@ -264,9 +275,11 @@ size_t FlexSerial::write(uint8_t c) {
 	//Serial.printf("WR %x %d %d %d %x %x\n", c, head, tx_buffer_size_,  TX_BUFFER_SIZE, (uint32_t)tx_buffer_, (uint32_t)tx_buffer_storage_);
 	_tx_buffer[_tx_buffer_head] = c;
 	__disable_irq();
-	//transmitting_ = 1;
+	_transmitting = 1;
 	_tx_buffer_head = head;
 	_tx_pflex->port().SHIFTSIEN |= _tx_shifter_mask;  // enable interrupt on this one...
+	_tx_pflex->port().TIMIEN &= ~_tx_timer_mask;	// Remove any timer interrupts
+	_tx_pflex->port().TIMSTAT = _tx_timer_mask;  // Clear the state. 
 
 	__enable_irq();
 	//digitalWrite(3, LOW);
@@ -362,13 +375,30 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 			if (_tx_buffer_head == _tx_buffer_tail) {
 				__disable_irq();
 				p->SHIFTSIEN &= ~_tx_shifter_mask;  // disable interrupt on this one...
+				// BUGBUG: This is not the right place for this!
+				p->TIMIEN |= _tx_timer_mask;	// Try turning on Timer error...
+				p->TIMSTAT = _tx_timer_mask;  // Clear the state. 
 				__enable_irq();
 				#ifdef DEBUG_FlexSerial_CALL_BACK
 				if (p == &IMXRT_FLEXIO1_S) Serial.print("*");
 				#endif
 			}
 			DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK_WRITE, LOW);
+		} 
+		else if (p->TIMIEN & p->TIMSTAT & _tx_timer_mask) {
+			DEBUG_digitalToggleFast(DEBUG_PIN_WRITE_TIMER_INT);
+			__disable_irq();
+			if (_transmitting >= 2) {
+				// We wait for an extr timer interrupt 
+				p->TIMIEN &= ~_tx_timer_mask; // turn it off
+				_transmitting = 0;
+			} else {
+				_transmitting++;	
+			}
+			p->TIMSTAT = _tx_timer_mask;  // Clear the state. 
+			__enable_irq();
 		}
+		// Check for error condition
 		if (p->SHIFTERR & _tx_shifter_mask) {
 			#ifdef DEBUG_FlexSerial_CALL_BACK
 			if (p == &IMXRT_FLEXIO1_S) Serial.printf("%u$", _txPin);
