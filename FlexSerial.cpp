@@ -5,7 +5,9 @@
 #define DEBUG_FlexSerial
 //#define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 #define DEBUG_digitalWriteFast(pin, state) 
-
+#define DEBUG_PIN_CALLBACK 30
+#define DEBUG_PIN_CALLBACK_READ 31
+#define DEBUG_PIN_CALLBACK_WRITE 32
 
 
 //=============================================================================
@@ -82,11 +84,11 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		p->TIMCFG[_tx_timer] = FLEXIO_TIMCFG_TSTART | FLEXIO_TIMCFG_TSTOP(2) |
 		                          FLEXIO_TIMCFG_TIMENA(2) |  FLEXIO_TIMCFG_TIMDIS(2); //0x0000_2222;
 		p->TIMCTL[_tx_timer] = FLEXIO_TIMCTL_TIMOD(1) | FLEXIO_TIMCTL_TRGPOL | FLEXIO_TIMCTL_TRGSRC
-		                          | FLEXIO_TIMCTL_TRGSEL(1) | FLEXIO_TIMCTL_PINSEL(_tx_flex_pin);  // 0x01C0_0001;
+		                          | FLEXIO_TIMCTL_TRGSEL(4*_tx_shifter + 1) | FLEXIO_TIMCTL_PINSEL(_tx_flex_pin);  // 0x01C0_0001;
 
 		__disable_irq();
 		p->CTRL = FLEXIO_CTRL_FLEXEN;
-		p->SHIFTSTAT = _tx_shifter_mask;   // Clear out the status.
+		//p->SHIFTSTAT = _tx_shifter_mask;   // Clear out the status. Maybe causes NULL char to output?
 		p->SHIFTSIEN &= ~_tx_shifter_mask;  // disable interrupt on this one...
 		__enable_irq();
 
@@ -260,7 +262,6 @@ size_t FlexSerial::write(uint8_t c) {
 	__disable_irq();
 	//transmitting_ = 1;
 	_tx_buffer_head = head;
-	//port->CTRL |= LPUART_CTRL_TIE; // (may need to handle this issue)BITBAND_SET_BIT(LPUART0_CTRL, TIE_BIT);
 	_tx_pflex->port().SHIFTSIEN |= _tx_shifter_mask;  // enable interrupt on this one...
 
 	__enable_irq();
@@ -315,12 +316,12 @@ int FlexSerial::availableForWrite(void) {
 
 
 bool FlexSerial::call_back (FlexIOHandler *pflex) {
-	DEBUG_digitalWriteFast(4, HIGH);
+	DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK, HIGH);
 	// check for RX
 	IMXRT_FLEXIO_t *p = &pflex->port();
 	if (pflex == _rx_pflex) {
 		if (_rx_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
-			DEBUG_digitalWriteFast(5, HIGH);
+			DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK_READ, HIGH);
 			uint8_t c = _rx_pflex->port().SHIFTBUFBYS[_rx_shifter] & 0xff;
 			uint32_t head;
 			head = _rx_buffer_head;
@@ -330,7 +331,7 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 				_rx_buffer[_rx_buffer_head] = c;
 				_rx_buffer_head = head;
 			}
-			DEBUG_digitalWriteFast(5, LOW);
+			DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK_READ, LOW);
 		}
 	}
 
@@ -340,7 +341,7 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 			#ifdef DEBUG_FlexSerial
 			if (p == &IMXRT_FLEXIO1_S) Serial.print(_txPin, DEC);
 			#endif
-			DEBUG_digitalWriteFast(6, HIGH);
+			DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK_WRITE, HIGH);
 			if (_tx_buffer_head != _tx_buffer_tail) {
 				#ifdef DEBUG_FlexSerial
 				if (p == &IMXRT_FLEXIO1_S) {
@@ -360,7 +361,7 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 				__enable_irq();
 				if (p == &IMXRT_FLEXIO1_S) Serial.print("*");
 			}
-			DEBUG_digitalWriteFast(6, LOW);
+			DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK_WRITE, LOW);
 		}
 		if (p->SHIFTERR & _tx_shifter_mask) {
 			#ifdef DEBUG_FlexSerial
@@ -373,7 +374,7 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 			__enable_irq();
 		}
 	}
-	DEBUG_digitalWriteFast(4, LOW);
+	DEBUG_digitalWriteFast(DEBUG_PIN_CALLBACK, LOW);
    asm("dsb");  // not sure if this will here or not. 
 
 	return false;  // right now always return false... 
