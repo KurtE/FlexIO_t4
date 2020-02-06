@@ -46,15 +46,48 @@ FlexIOHandlerCallback *flex2_Handler_callbacks[4] = {nullptr, nullptr, nullptr, 
 FlexIOHandlerCallback *flex3_Handler_callbacks[4] = {nullptr, nullptr, nullptr, nullptr};
 
 //-----------------------------------------------------------------------------
-// T4 Beta 2 board and probably release
+// T4.1 board
 //-----------------------------------------------------------------------------
-
+#if defined(ARDUINO_TEENSY41)
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
+	2,       3,    4,    5,  33,    45,   46,   47,   48, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	4,       5,    6,    8,  7,     12,   13,   14,   15, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
 
+const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
+	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
+	IRQ_FLEXIO2, 
+	IRQHandler_FlexIO2,
+	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
+	6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
+
+const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
+	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
+	IRQ_FLEXIO3, 
+	IRQHandler_FlexIO3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
+	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41, 
+	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5, 
+	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 
+};
+
+//-----------------------------------------------------------------------------
+// T4 board
+//-----------------------------------------------------------------------------
+#else
+const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
+	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
+	IRQ_FLEXIO1, 
+	&IRQHandler_FlexIO1,
+	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
 	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -79,7 +112,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
 	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19,
 };
-
+#endif
 
 static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks);
 static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks);
