@@ -54,12 +54,14 @@ FlexIO 3 - Note Flex IO 3 does not have DMA support
 
 The Teensy 4.1 Will have additional IO pins.  
 -------------
-Warning The below is a guess on what the final pin numbers and the like will be, take it with grain of salt.
+Warning The below now matches the first update to github CORE project for T4.1 by Paul, so the
+final pin numbers are probably reasonably close, but probably not written in stone until the 
+boards actually start shipping. So maybe take it with grain of salt.
 
 FlexIO 1 - The three rows are: Teensy pin, Flex IO pin, and MUX setting for that pin:
 ```
-    2,       3,    4,    5,  33,    45,   46,   47,   48
-    4,       5,    6,    8,  7,     12,   13,   14,   15
+    2,       3,    4,    5,  33,    49,   50,   52,   54
+    4,       5,    6,    8,  7,     13,   14,   12,   15
     0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14
 ```    
 
