@@ -58,26 +58,29 @@ Warning The below now matches the first update to github CORE project for T4.1 b
 final pin numbers are probably reasonably close, but probably not written in stone until the 
 boards actually start shipping. So maybe take it with grain of salt.
 
-FlexIO 1 - The three rows are: Teensy pin, Flex IO pin, and MUX setting for that pin:
+**FlexIO 1** - The three rows are: Teensy pin, Flex IO pin, and MUX setting for that pin:
 ```
     2,       3,    4,    5,  33,    49,   50,   52,   54
     4,       5,    6,    8,  7,     13,   14,   12,   15
     0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14
 ```    
+Ranges: 4-8,12-15
 
-FlexIO 2 
+**FlexIO 2** 
 ```
     6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37
     10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19
     0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14
 ```
+So have bit ranges 0-3, 10-12, 16-19, 28029
 
-FlexIO 3 - Note Flex IO 3 does not have DMA support
+**FlexIO 3** - Note Flex IO 3 does not have DMA support
 ```
     7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41
     17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5 
     0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19 
 ```
+Have ranges: 0-19, 28-29
 
 
 Library details
