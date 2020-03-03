@@ -17,11 +17,11 @@ bool FlexSPI::begin() {
 	// Make sure all of the IO pins are valid flex pins on same controller
 	//-------------------------------------------------------------------------
 	_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_mosiPin, _mosi_flex_pin);
-	if (_pflex) {
+	if (!_pflex) {
 		Serial.printf("FlexSPI - Mosi pin does not map to flex controller\n");
 		return false;
 	}
-
+	//Serial.printf("FlexSPI Begin: Mosi map %d %x %d\n", _mosiPin, (uint32_t)_pflex, _mosi_flex_pin);
 	// Lets try mapping the others to this one.
 	_sck_flex_pin = _pflex->mapIOPinToFlexPin(_sckPin);
  	_miso_flex_pin = _pflex->mapIOPinToFlexPin(_misoPin);
@@ -229,6 +229,9 @@ void FlexSPI::endTransaction(void) {
 	}
 	_in_transaction_flag = 0;
 	#endif
+#ifdef DEBUG_FlexSPI
+		DEBUG_FlexSPI.printf("flexspi:endTransaction\n");
+#endif
 }
 
 
