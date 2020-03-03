@@ -1,13 +1,13 @@
 #include <FlexIO_t4.h>
-#include <FlexSPI.h>
+#include <FlexIOSPI.h>
 
 //#define HARDWARE_CS
 #ifdef HARDWARE_CS
-FlexSPI SPIFLEX(2, 3, 4, 5); // Setup on (int mosiPin, int sckPin, int misoPin, int csPin=-1) :
+FlexIOSPI SPIFLEX(2, 3, 4, 5); // Setup on (int mosiPin, int sckPin, int misoPin, int csPin=-1) :
 #define assert_cs()
 #define release_cs()
 #else
-FlexSPI SPIFLEX(2, 3, 4, -1); // Setup on (int mosiPin, int sckPin, int misoPin, int csPin=-1) :
+FlexIOSPI SPIFLEX(2, 3, 4, -1); // Setup on (int mosiPin, int sckPin, int misoPin, int csPin=-1) :
 #define assert_cs() digitalWriteFast(5, LOW)
 #define release_cs() digitalWriteFast(5, HIGH)
 #endif
@@ -37,7 +37,7 @@ uint16_t ret_buf[256];
 uint8_t ch_out = 0;
 
 void loop() {
-  SPIFLEX.beginTransaction(FlexSPISettings(20000000, MSBFIRST, SPI_MODE0));
+  SPIFLEX.beginTransaction(FlexIOSPISettings(20000000, MSBFIRST, SPI_MODE0));
   assert_cs();
   for (uint8_t ch_out = 0; ch_out < 64; ch_out++) {
     ret_buf[ch_out] = SPIFLEX.transfer(ch_out);

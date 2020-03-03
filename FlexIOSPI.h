@@ -30,8 +30,8 @@
 #include <DMAChannel.h>
 #include <EventResponder.h>
 
-#ifndef _FLEX_SPI_H_
-#define _FLEX_SPI_H_
+#ifndef _FLEXIO_SPI_H_
+#define _FLEXIO_SPI_H_
 
 #ifndef LSBFIRST
 #define LSBFIRST 0
@@ -49,9 +49,9 @@
 #define SPI_MODE_TRANSMIT_ONLY 0x80 	// Hack to allow higher speeds when transmit only 
 
 // Pretty stupid settings for now...
-class FlexSPISettings {
+class FlexIOSPISettings {
 public:
-	FlexSPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) : _clock(clock), 
+	FlexIOSPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) : _clock(clock), 
 		_bitOrder(bitOrder), _dataMode(dataMode) {};
 
 	uint32_t _clock;
@@ -59,14 +59,14 @@ public:
 	uint8_t	_dataMode;
 };
 
-class FlexSPI : public FlexIOHandlerCallback
+class FlexIOSPI : public FlexIOHandlerCallback
 {
 public:
 	enum {TX_BUFFER_SIZE=64, RX_BUFFER_SIZE=40};
-	FlexSPI(int mosiPin, int misoPin, int sckPin,  int csPin=-1) :
+	FlexIOSPI(int mosiPin, int misoPin, int sckPin,  int csPin=-1) :
 		_mosiPin(mosiPin), _sckPin(sckPin), _misoPin(misoPin), _csPin(csPin) {};
 
-	~FlexSPI() { end(); }
+	~FlexIOSPI() { end(); }
 	bool begin();
 	void end(void);
 
@@ -84,7 +84,7 @@ public:
 	static void _dma_rxISR1(void);
 	inline void dma_rxisr(void);
 
-	void beginTransaction(FlexSPISettings settings);
+	void beginTransaction(FlexIOSPISettings settings);
 	void endTransaction(void);
 
 	// have ability to retrieve the FLEXIO object
@@ -131,6 +131,6 @@ private:
 	DMAChannel   	*_dmaTX = nullptr;
 	DMAChannel    	*_dmaRX = nullptr;
 	EventResponder *_dma_event_responder = nullptr;
-	static FlexSPI  *_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT];
+	static FlexIOSPI  *_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT];
 };
 #endif //_FLEX_SPI_H_

@@ -1,16 +1,16 @@
-#include "FlexSPI.h"
+#include "FlexIOSPI.h"
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
 //#define DEBUG_FlexSPI Serial
 #define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalWriteFast(pin, state) 
-FlexSPI  *FlexSPI::_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT] = {nullptr, nullptr};
+FlexIOSPI  *FlexIOSPI::_dmaActiveObjects[FlexIOHandler::CNT_FLEX_IO_OBJECT] = {nullptr, nullptr};
 
 //=============================================================================
-// FlexSPI::Begin
+// FlexIOSPI::Begin
 //=============================================================================
-bool FlexSPI::begin() {
+bool FlexIOSPI::begin() {
 	// BUGBUG - may need to actual Clocks to computer baud...
 //	uint16_t baud_div =  (FLEXIO1_CLOCK/baud)/2 - 1;                                   
 	//-------------------------------------------------------------------------
@@ -18,10 +18,10 @@ bool FlexSPI::begin() {
 	//-------------------------------------------------------------------------
 	_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_mosiPin, _mosi_flex_pin);
 	if (!_pflex) {
-		Serial.printf("FlexSPI - Mosi pin does not map to flex controller\n");
+		Serial.printf("FlexIOSPI - Mosi pin does not map to flex controller\n");
 		return false;
 	}
-	//Serial.printf("FlexSPI Begin: Mosi map %d %x %d\n", _mosiPin, (uint32_t)_pflex, _mosi_flex_pin);
+	//Serial.printf("FlexIOSPI Begin: Mosi map %d %x %d\n", _mosiPin, (uint32_t)_pflex, _mosi_flex_pin);
 	// Lets try mapping the others to this one.
 	_sck_flex_pin = _pflex->mapIOPinToFlexPin(_sckPin);
  	_miso_flex_pin = _pflex->mapIOPinToFlexPin(_misoPin);
@@ -36,7 +36,7 @@ bool FlexSPI::begin() {
 			_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_miso_flex_pin, _miso_flex_pin); 			
  		}
  		if (!_pflex) {
-			Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+			Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
 			return false;
  		}
 
@@ -44,12 +44,12 @@ bool FlexSPI::begin() {
 		_sck_flex_pin = _pflex->mapIOPinToFlexPin(_sckPin);
 		_miso_flex_pin = _pflex->mapIOPinToFlexPin(_misoPin);
  		if ((_sck_flex_pin == 0xff) || (_miso_flex_pin == 0xff) || (_mosi_flex_pin == 0xff)) {
-			Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+			Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
 			return false;
  		}
  		#else
  			// 1052 don't have pins that map to different FLEXIO controllers
-			Serial.printf("FlexSPI - not all pins mapped to same Flex controller\n");
+			Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
 			return false;
  		#endif
  	}
@@ -57,7 +57,7 @@ bool FlexSPI::begin() {
 	if (_csPin != -1) {
 		_cs_flex_pin = _pflex->mapIOPinToFlexPin(_csPin);
 		if (_cs_flex_pin == 0xff) {
-			Serial.printf("FlexSPI - not all pins(CS) mapped to same Flex controller\n");
+			Serial.printf("FlexIOSPI - not all pins(CS) mapped to same Flex controller\n");
 			return false;			
 		}
 	}
@@ -80,7 +80,7 @@ bool FlexSPI::begin() {
 		_pflex->freeShifter(_rx_shifter);
 		_tx_shifter = 0xff;
 		_rx_shifter = 0xff;
-		Serial.println("FlexSPI - Failed to allocate timers or shifters");
+		Serial.println("FlexIOSPI - Failed to allocate timers or shifters");
 		return false;
 	}
 
@@ -159,7 +159,7 @@ bool FlexSPI::begin() {
 	return true;
 }
 
-void FlexSPI::end(void) {
+void FlexIOSPI::end(void) {
 	// If the transmit was allocated free it now as well as timers and shifters.
 	if (_pflex) {
 		_pflex->freeTimers(_timer, (_csPin != -1)? 2 : 1);
@@ -174,7 +174,7 @@ void FlexSPI::end(void) {
 
 }
 
-void FlexSPI::beginTransaction(FlexSPISettings settings) {
+void FlexIOSPI::beginTransaction(FlexIOSPISettings settings) {
 	#ifdef SPI_TRANSACTION_MISMATCH_LED
 	if (inTransactionFlag) {
 		pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
@@ -202,7 +202,7 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 		}
 		_pflex->port().TIMCMP[_timer] = div | 0x0f00; // Set the speed and set into 8 bit mode
 #ifdef DEBUG_FlexSPI
-		DEBUG_FlexSPI.printf("flexspi:beginTransaction TIMCMP: %x\n", _pflex->port().TIMCMP[_timer]);
+		DEBUG_FlexSPI.printf("FlexIOSPI:beginTransaction TIMCMP: %x\n", _pflex->port().TIMCMP[_timer]);
 #endif
 	}
 
@@ -221,7 +221,7 @@ void FlexSPI::beginTransaction(FlexSPISettings settings) {
 
 // After performing a group of transfers and releasing the chip select
 // signal, this function allows others to access the SPI bus
-void FlexSPI::endTransaction(void) {
+void FlexIOSPI::endTransaction(void) {
 	#ifdef SPI_TRANSACTION_MISMATCH_LED
 	if (!inTransactionFlag) {
 		pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
@@ -230,12 +230,12 @@ void FlexSPI::endTransaction(void) {
 	_in_transaction_flag = 0;
 	#endif
 #ifdef DEBUG_FlexSPI
-		DEBUG_FlexSPI.printf("flexspi:endTransaction\n");
+		DEBUG_FlexSPI.printf("FlexIOSPI:endTransaction\n");
 #endif
 }
 
 
-uint8_t FlexSPI::transfer(uint8_t b) 
+uint8_t FlexIOSPI::transfer(uint8_t b) 
 {
 	// Need to do some validation...
 	uint8_t return_val ;
@@ -259,7 +259,7 @@ uint8_t FlexSPI::transfer(uint8_t b)
 	return return_val;
 }
 
-uint16_t FlexSPI::transfer16(uint16_t w) 
+uint16_t FlexIOSPI::transfer16(uint16_t w) 
 {
 	uint16_t return_val = 0xffff;
 	uint16_t timcmp_save = _pflex->port().TIMCMP[_timer];	// remember value coming in
@@ -281,7 +281,7 @@ uint16_t FlexSPI::transfer16(uint16_t w)
 
 }
 
-void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
+void FlexIOSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	uint32_t tx_count = count;
 	const uint8_t *tx_buffer = (const uint8_t*)buf;
 	uint8_t *rx_buffer = (uint8_t*)retbuf;
@@ -319,7 +319,7 @@ void FlexSPI::transfer(const void * buf, void * retbuf, size_t count) {
 
 
 
-bool FlexSPI::call_back (FlexIOHandler *pflex) {
+bool FlexIOSPI::call_back (FlexIOHandler *pflex) {
 //	DEBUG_digitalWriteFast(4, HIGH);
 	return false;  // right now always return false... 
 }
@@ -336,7 +336,7 @@ static uint8_t bit_bucket;
 //=========================================================================
 // Init the DMA channels
 //=========================================================================
-bool FlexSPI::initDMAChannels() {
+bool FlexIOSPI::initDMAChannels() {
 	// Allocate our channels. 
 	_dmaTX = new DMAChannel();
 	if (_dmaTX == nullptr) {
@@ -392,7 +392,7 @@ void dumpDMA_TCD(DMABaseClass *dmabc)
 }
 #endif
 
-bool FlexSPI::transfer(const void *buf, void *retbuf, size_t count, EventResponderRef event_responder) {
+bool FlexIOSPI::transfer(const void *buf, void *retbuf, size_t count, EventResponderRef event_responder) {
 	if (_dma_state == DMAState::notAllocated) {
 		if (!initDMAChannels())
 			return false;
@@ -462,19 +462,19 @@ bool FlexSPI::transfer(const void *buf, void *retbuf, size_t count, EventRespond
 	return true;
 }
 
-void FlexSPI::_dma_rxISR0(void) {
-	FlexSPI::_dmaActiveObjects[0]->dma_rxisr();
+void FlexIOSPI::_dma_rxISR0(void) {
+	FlexIOSPI::_dmaActiveObjects[0]->dma_rxisr();
 }
 
-void FlexSPI::_dma_rxISR1(void) {
-	FlexSPI::_dmaActiveObjects[1]->dma_rxisr();
+void FlexIOSPI::_dma_rxISR1(void) {
+	FlexIOSPI::_dmaActiveObjects[1]->dma_rxisr();
 }
 
 
 //-------------------------------------------------------------------------
 // DMA RX ISR
 //-------------------------------------------------------------------------
-void FlexSPI::dma_rxisr(void) {
+void FlexIOSPI::dma_rxisr(void) {
 	_dmaRX->clearInterrupt();
 	_dmaTX->clearComplete();
 	_dmaRX->clearComplete();
