@@ -62,7 +62,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
 	IRQ_FLEXIO2, 
-	IRQHandler_FlexIO2,
+	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
 	6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -72,7 +72,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
 	IRQ_FLEXIO3, 
-	IRQHandler_FlexIO3,
+	&IRQHandler_FlexIO3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41, 
 	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5, 
@@ -96,7 +96,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
 	IRQ_FLEXIO2, 
-	IRQHandler_FlexIO2,
+	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
 	6,       7,    8,    9,  10,    11,   12,   13,   32, 0xff, 0xff, 0xff, 0xff, 0xff,
 	10,     17,   16,   11,  0,      2,    1,    3,   12, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -106,7 +106,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
 	IRQ_FLEXIO3, 
-	IRQHandler_FlexIO3,
+	&IRQHandler_FlexIO3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   
 	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
