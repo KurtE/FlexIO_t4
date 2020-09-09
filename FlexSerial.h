@@ -37,14 +37,14 @@ class FlexSerial : public Stream, public FlexIOHandlerCallback
 public:
 	enum {TX_BUFFER_SIZE=64, RX_BUFFER_SIZE=40};
 	FlexSerial(int rxPin=-1, int txPin=-1, 
-			int8_t rx_flex=-1, int8_t rx_timer=-1, int8_t rx_shifter=-1, 
-			int8_t tx_flex=-1, int8_t tx_timer=-1, int8_t tx_shifter=-1) :
+			uint8_t rx_flex=0xff, uint8_t rx_timer=0xff, uint8_t rx_shifter=0xff, 
+			uint8_t tx_flex=0xff, uint8_t tx_timer=0xff, uint8_t tx_shifter=0xff) :
 		_rxPin(rxPin), _txPin(txPin), 
 		_rx_timer(rx_timer), _rx_shifter(rx_shifter), _tx_timer(tx_timer), _tx_shifter(tx_shifter)
 	{
-		if ((rx_flex >=0) && (rx_flex < (int8_t)(sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0]))))
+		if (rx_flex < (uint8_t)(sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0])))
 			_rx_pflex = FlexIOHandler::flexIOHandler_list[rx_flex];
-		if ((tx_flex >=0) && (tx_flex < (int8_t)(sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0]))))
+		if (tx_flex < (uint8_t)(sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0])))
 			_tx_pflex = FlexIOHandler::flexIOHandler_list[tx_flex];
 	}	 
 	
@@ -75,11 +75,11 @@ private:
 	int _txPin;
 
 	// others that get passed through constructor
-	int8_t 			_rx_timer;
-	int8_t 			_rx_shifter;
+	uint8_t 			_rx_timer;
+	uint8_t 			_rx_shifter;
 
-	int8_t 			_tx_timer;
-	int8_t 			_tx_shifter;
+	uint8_t 			_tx_timer;
+	uint8_t 			_tx_shifter;
 
 	// Variables for tranmitter
 	FlexIOHandler *_tx_pflex = nullptr;
