@@ -130,6 +130,13 @@ bool FlexIOSPI::begin() {
 	_pflex->setIOPinToFlexMode(_mosiPin);
 	_pflex->setIOPinToFlexMode(_sckPin);
 	_pflex->setIOPinToFlexMode(_misoPin);
+	//uint32_t fastio = IOMUXC_PAD_DSE(6) | IOMUXC_PAD_SPEED(1);
+	//uint32_t fastio = IOMUXC_PAD_DSE(3) | IOMUXC_PAD_SPEED(3);
+	//Serial.printf("SPI MISO: %d MOSI: %d, SCK: %d\n", hardware().miso_pin[miso_pin_index], hardware().mosi_pin[mosi_pin_index], hardware().sck_pin[sck_pin_index]);
+	*(portControlRegister(_mosiPin)) = fastio;
+	*(portControlRegister(_sckPin)) = fastio;
+	*(portControlRegister(_misoPin)) = fastio | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);  // maybe add our own internal PU?
+
 	if (_csPin != -1)
 		_pflex->setIOPinToFlexMode(_csPin);
 
@@ -143,6 +150,9 @@ bool FlexIOSPI::begin() {
 
 	// Lets print out some of the settings and the like to get idea of state
 #ifdef DEBUG_FlexSPI
+	DEBUG_FlexSPI.printf("Mosi map: %d %x %d\n", _mosiPin, (uint32_t)_pflex, _mosi_flex_pin);
+	DEBUG_FlexSPI.printf("Miso map: %d %d\n", _misoPin, _miso_flex_pin);
+	DEBUG_FlexSPI.printf("Sck map: %d %d\n", _sckPin, _sck_flex_pin);
 	DEBUG_FlexSPI.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
 	DEBUG_FlexSPI.printf("FlexIO bus speed: %d\n", _pflex->computeClockRate());
 	DEBUG_FlexSPI.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n", p->PARAM, p->CTRL, p->CTRL, p->PIN);
@@ -230,7 +240,7 @@ void FlexIOSPI::endTransaction(void) {
 	_in_transaction_flag = 0;
 	#endif
 #ifdef DEBUG_FlexSPI
-		DEBUG_FlexSPI.printf("FlexIOSPI:endTransaction\n");
+	DEBUG_FlexSPI.printf("FlexIOSPI:endTransaction\n");
 #endif
 }
 
@@ -261,6 +271,7 @@ uint8_t FlexIOSPI::transfer(uint8_t b)
 
 uint16_t FlexIOSPI::transfer16(uint16_t w) 
 {
+#if 0	
 	uint16_t return_val = 0xffff;
 	uint16_t timcmp_save = _pflex->port().TIMCMP[_timer];	// remember value coming in
 	_pflex->port().TIMCMP[_timer] = (timcmp_save & 0xff) | 0x1f00; // Try turning on 16 bit mode
@@ -276,9 +287,12 @@ uint16_t FlexIOSPI::transfer16(uint16_t w)
 	}
 
 	_pflex->port().TIMCMP[_timer] = timcmp_save; // (8 bits?)0x3f01; // ???0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
-
 	return return_val;
-
+#else
+	uint8_t msb = transfer(w >> 8);
+	uint8_t lsb = transfer(w & 0xff);	
+	return (uint16_t)(msb << 8) | lsb;
+#endif
 }
 
 void FlexIOSPI::transfer(const void * buf, void * retbuf, size_t count) {
