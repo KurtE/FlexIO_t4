@@ -43,16 +43,23 @@ public:
 	virtual bool call_back (FlexIOHandler *pflex) = 0;
 };
 
+// Note: T4.x Param data does not match RM. 
+// PARAM:2200808
 class FlexIOHandler {
 public:
-	static const uint8_t CNT_SHIFTERS = 4;
+	static const uint8_t CNT_SHIFTERS = 8;
+	static const uint8_t CNT_TIMERS = 8;
 #if defined(ARDUINO_TEENSY41)
 	static const uint8_t CNT_FLEX_PINS = 22;
+	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
+#elif defined(ARDUINO_TEENSY_MICROMOD)
+	static const uint8_t CNT_FLEX_PINS = 15;
 	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
 #else
 	// T4
 	static const uint8_t CNT_FLEX_PINS = 14;
 	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
+	static const uint8_t CNT_TIMERS = 8
 #endif
 	typedef struct {
 		volatile uint32_t &clock_gate_register;

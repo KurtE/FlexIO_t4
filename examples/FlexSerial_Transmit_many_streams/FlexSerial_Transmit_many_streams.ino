@@ -7,13 +7,13 @@
 #include <FlexSerial.h>
 
 FlexSerial FlexSerials[] = {
-  { -1, 2, -1, 0, 0, 0, 0, 0},
-  { -1, 3, -1, 0, 0, 0, 1, 1},
-  { -1, 4, -1, 0, 0, 0, 2, 2},
-  { -1, 5, -1, 0, 0, 0, 3, 3},
-  { -1, 6},
-  { -1, 18},
-  { -1, 19}
+  {0xff, 2, 0xff, 0, 0, 0, 0, 0},
+  {0xff, 3, 0xff, 0, 0, 0, 1, 1},
+  {0xff, 4, 0xff, 0, 0, 0, 2, 2},
+  {0xff, 5, 0xff, 0, 0, 0, 3, 3},
+  {0xff, 6},
+  {0xff, 18},
+  {0xff, 19}
 };
 
 const uint8_t count_flexSerials = sizeof(FlexSerials) / sizeof(FlexSerials[0]);
