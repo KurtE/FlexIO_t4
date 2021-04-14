@@ -41,9 +41,9 @@ extern void IRQHandler_FlexIO1();
 extern void IRQHandler_FlexIO2();
 extern void IRQHandler_FlexIO3();
 
-FlexIOHandlerCallback *flex1_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr};
-FlexIOHandlerCallback *flex2_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr};
-FlexIOHandlerCallback *flex3_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr};
+FlexIOHandlerCallback *flex1_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+FlexIOHandlerCallback *flex2_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+FlexIOHandlerCallback *flex3_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
 //-----------------------------------------------------------------------------
 // T4.1 board
@@ -54,6 +54,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	2,       3,    4,    5,  33,    49,   50,   52,   54, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	4,       5,    6,    8,  7,     13,   14,   12,   15, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -64,6 +65,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	IRQ_FLEXIO2, 
 	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -73,6 +75,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
 	IRQ_FLEXIO3, 
 	&IRQHandler_FlexIO3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41, 
 	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5, 
@@ -88,6 +91,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -98,6 +102,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	IRQ_FLEXIO2, 
 	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	6,       7,    8,    9,  10,    11,   12,   13,   32,   40,   41,   42,   43,   44,   45,
 	10,     17,   16,   11,  0,      2,    1,    3,   12,    4,    5,    6,    7,    8,    9,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
@@ -107,6 +112,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
 	IRQ_FLEXIO3, 
 	&IRQHandler_FlexIO3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27, 0xff,   
 	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15, 0xff,    
@@ -122,6 +128,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -132,6 +139,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	IRQ_FLEXIO2, 
 	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	6,       7,    8,    9,  10,    11,   12,   13,   32, 0xff, 0xff, 0xff, 0xff, 0xff,
 	10,     17,   16,   11,  0,      2,    1,    3,   12, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -141,6 +149,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
 	IRQ_FLEXIO3, 
 	&IRQHandler_FlexIO3,
+	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   
 	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
