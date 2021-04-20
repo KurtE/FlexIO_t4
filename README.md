@@ -37,6 +37,7 @@ FlexIO 1 - The three rows are: Teensy pin, Flex IO pin, and MUX setting for that
     4,       5,    6,    8,  7, 
     0x14, 0x14, 0x14, 0x14, 0x14
 ```    
+Ranges: 4-8
 
 FlexIO 2 
 ```
@@ -44,6 +45,7 @@ FlexIO 2
     10,     17,   16,   11,  0,      2,    1,    3,   12, 
     0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 
 ```
+Ranges: 0-3, 10-12, 16-17
 
 FlexIO 3 - Note Flex IO 3 does not have DMA support
 ```
@@ -51,6 +53,7 @@ FlexIO 3 - Note Flex IO 3 does not have DMA support
     17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
     0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19,
 ```
+Ranges: 0-3,6-11,14-17
 
 The Teensy 4.1 (ARDUINO_TEENSY41) Will have additional IO pins.  
 -------------
@@ -68,7 +71,7 @@ Ranges: 4-8,12-15
     10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19
     0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14
 ```
-So have bit ranges 0-3, 10-12, 16-19, 28-29
+Ranges 0-3, 10-12, 16-19, 28-29
 
 **FlexIO 3** - Note Flex IO 3 does not have DMA support
 ```
@@ -76,7 +79,7 @@ So have bit ranges 0-3, 10-12, 16-19, 28-29
     17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5 
     0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19 
 ```
-Have ranges: 0-19, 28-29
+Ranges: 0-19, 28-29
 
 The Teensy Sparkfun MicroMod (ARDUINO_TEENSY_MICROMOD) is sort of a cross between T4 and T4.1, but has additional pins on FlexIO 2  
 -------------
@@ -95,7 +98,7 @@ Ranges: 4-8
     10,     17,   16,   11,  0,      2,    1,    3,   12,    4,    5,    6,    7,    8,    9,
     0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
 ```
-So have bit ranges 0-12, 16-17
+Ranges 0-12, 16-17
 
 **FlexIO 3** - Note Flex IO 3 does not have DMA support
 ```
@@ -103,7 +106,7 @@ So have bit ranges 0-12, 16-17
     17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15, 0xff,    
     0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0xff,
 ```
-Have ranges: 0-3,6-11,14-17
+Ranges: 0-3,6-11,14-17
 
 Library details
 ===============
