@@ -59,7 +59,6 @@ public:
 	// T4
 	static const uint8_t CNT_FLEX_PINS = 14;
 	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
-	static const uint8_t CNT_TIMERS = 8
 #endif
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
