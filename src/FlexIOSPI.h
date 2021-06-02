@@ -40,6 +40,11 @@
 #define MSBFIRST 1
 #endif
 
+#ifndef DEFAULT_TRANSFER_BITS
+#define DEFAULT_TRANSFER_BITS 8
+#define DEFAULT_TRANSFER_BYTES 1
+#endif
+
 #ifndef SPI_MODE0
 #define SPI_MODE0 0x00
 #define SPI_MODE1 0x04
@@ -52,11 +57,15 @@
 class FlexIOSPISettings {
 public:
 	FlexIOSPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) : _clock(clock), 
-		_bitOrder(bitOrder), _dataMode(dataMode) {};
+		_bitOrder(bitOrder), _dataMode(dataMode), _nTransferBits(DEFAULT_TRANSFER_BITS) {};
+	
+	FlexIOSPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode, uint8_t nTransBits) : _clock(clock), 
+		_bitOrder(bitOrder), _dataMode(dataMode), _nTransferBits(nTransBits) {};
 
 	uint32_t _clock;
 	uint8_t _bitOrder;
 	uint8_t	_dataMode;
+	uint8_t _nTransferBits;
 };
 
 class FlexIOSPI : public FlexIOHandlerCallback
@@ -70,12 +79,22 @@ public:
 	bool begin();
 	void end(void);
 
-	uint8_t transfer(uint8_t b);	// transfer one byte
-	uint16_t transfer16(uint16_t w);
+	//TODO consider redesign to allow for greater than 32 bit transmissions of singles.
+	uint8_t transfer(uint8_t b)   {return (uint8_t)transferNBits((uint32_t)b,sizeof(b)*8);}// transfer 1 byte
+	uint16_t transfer16(uint16_t w) {return (uint16_t)transferNBits((uint32_t)w,sizeof(w)*8);}// transfer 2 bytes
+	uint32_t transfer32(uint32_t w) {return (uint32_t)transferNBits(w,sizeof(w)*8);} //transfer 4 bytes
+	uint32_t transferNBits(uint32_t w_out, uint8_t nbits); //transfer arbitrary number of bits up to 32
+
+	//Sequence correction of data to/from shift buffers.
+	void setShiftBufferOut(uint32_t val, uint8_t nbits);
+	void setShiftBufferOut(const void * buf, uint8_t nbits, size_t dtype_size);
+	uint32_t getShiftBufferIn(uint8_t nbits);
+	void getShiftBufferIn(void* retbuf,uint8_t nbits,size_t dtype_size);
 
 	void inline transfer(void *buf, size_t count) {transfer(buf, buf, count);}
 	void setTransferWriteFill(uint8_t ch ) {_transferWriteFill = ch;}
-	void transfer(const void * buf, void * retbuf, size_t count);
+	void transfer(const void * buf, void * retbuf, size_t count) {transferBufferNBits(buf,retbuf,count,0);} //0 on nbits implies use object state
+	void transferBufferNBits(const void * buf, void * retbuf, size_t count, uint8_t nbits);
 
 	// Asynch support (DMA )
 	bool transfer(const void *txBuffer, void *rxBuffer, size_t count,  EventResponderRef  event_responder);
@@ -106,6 +125,8 @@ private:
 	uint32_t 		_clock = 0;
 	uint8_t 		_bitOrder = MSBFIRST;
 	uint8_t			_dataMode = SPI_MODE0;
+	uint8_t 		_nTransferBits = DEFAULT_TRANSFER_BITS;
+	uint8_t 		_nTransferBytes = DEFAULT_TRANSFER_BYTES; //Calculated during beginTransaction from _nTransferBits, used for DMA transfers
 	volatile uint32_t *_shiftBufInReg = nullptr;
 	volatile uint32_t *_shiftBufOutReg = nullptr;
 

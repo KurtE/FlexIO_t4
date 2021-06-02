@@ -196,10 +196,12 @@ void FlexIOSPI::beginTransaction(FlexIOSPISettings settings) {
 	#endif
 
 	// right now pretty stupid
-	if ((settings._clock != _clock) || (settings._dataMode != _dataMode )) {
+	if ((settings._clock != _clock) || (settings._dataMode != _dataMode ) || (settings._nTransferBits != _nTransferBits )){
 		_clock = settings._clock;
 		_dataMode = settings._dataMode;
-
+		_nTransferBits = settings._nTransferBits; //Probaby should have some safety checking to keep this in the 1-32 range for now.
+		_nTransferBytes = (_nTransferBits-1)/8+1;
+		if(_nTransferBytes == 3) _nTransferBytes = 4; //DMA doesn't handle arbitrary pointer shifts so force 32bit alignment even though it would fit into 24bits.
 		uint32_t clock_speed = _pflex->computeClockRate() / 2;   // get speed divide by 
 		uint32_t div = clock_speed / _clock;
 		if (div) {
@@ -212,23 +214,15 @@ void FlexIOSPI::beginTransaction(FlexIOSPISettings settings) {
 		 	else if ((div == 1) && (_clock > 30000000u))
 		 		div = 2;
 		}
-		_pflex->port().TIMCMP[_timer] = div | 0x0f00; // Set the speed and set into 8 bit mode
+
+		_pflex->port().TIMCMP[_timer] = div | (_nTransferBits*2-1)<<8; // Set the clk div for shifter and set transfer length
 #ifdef DEBUG_FlexSPI
 		DEBUG_FlexSPI.printf("FlexIOSPI:beginTransaction TIMCMP: %x\n", _pflex->port().TIMCMP[_timer]);
 #endif
 	}
 
-	if (_bitOrder != settings._bitOrder) {
-		_bitOrder = settings._bitOrder;
-		if (_bitOrder == MSBFIRST) {
-			_shiftBufOutReg = &_pflex->port().SHIFTBUFBBS[_tx_shifter];
-			_shiftBufInReg = &_pflex->port().SHIFTBUFBIS[_rx_shifter];;
-		} else {
-			_shiftBufOutReg = &_pflex->port().SHIFTBUF[_tx_shifter];
-			_shiftBufInReg = &_pflex->port().SHIFTBUFBYS[_rx_shifter];;			
-		}
+	_bitOrder = settings._bitOrder;
 
-	}
 }
 
 // After performing a group of transfers and releasing the chip select
@@ -246,90 +240,144 @@ void FlexIOSPI::endTransaction(void) {
 #endif
 }
 
+void FlexIOSPI::setShiftBufferOut(uint32_t val, uint8_t nbits){
+	if (_bitOrder == MSBFIRST) {
+		_pflex->port().SHIFTBUFBIS[_tx_shifter] = val << (32-nbits);
+	}else{
+		_pflex->port().SHIFTBUF[_tx_shifter] = val;
+	}
+}
 
-uint8_t FlexIOSPI::transfer(uint8_t b) 
-{
+void FlexIOSPI::setShiftBufferOut(const void * buf, uint8_t nbits, size_t dtype_size){
+	uint32_t val = 0;
+	switch (dtype_size)
+	{
+		case 1:
+			val = *(uint8_t*)buf;
+			break;
+		case 2:
+			val = *(uint16_t*)buf;
+			break;
+		case 3:
+			val = (*(uint32_t*)buf)&0xffffff;
+			break;
+		case 4:
+			val = *(uint32_t*)buf;
+			break;
+		default:
+			break;
+	}
+	setShiftBufferOut(val,nbits);
+}
+
+uint32_t FlexIOSPI::getShiftBufferIn(uint8_t nbits){
+	uint32_t ret_val ;
+	if (_bitOrder == MSBFIRST) {
+		ret_val = _pflex->port().SHIFTBUFBIS[_rx_shifter];	
+	}else{
+		ret_val = _pflex->port().SHIFTBUF[_rx_shifter] >> (32-nbits);
+	}
+	return ret_val;
+}
+
+void FlexIOSPI::getShiftBufferIn(void* retbuf,uint8_t nbits,size_t dtype_size){
+	uint32_t tmp;
+	switch (dtype_size)
+	{
+		case 1:
+			*(uint8_t*)retbuf = (uint8_t)getShiftBufferIn(nbits);
+			break;
+		case 2:
+			*(uint16_t*)retbuf = (uint16_t)getShiftBufferIn(nbits);
+			break;
+		case 3: //The weird case that gets some shuffling to handle the last chunk without overflowing
+			tmp = getShiftBufferIn(nbits); 
+			*(uint16_t*)retbuf = (uint16_t)tmp&0xffff; //Lower16 bits
+			*((uint8_t*)retbuf + 2) = (uint8_t)(tmp>>16)&0xff; //Upper8 bits
+			break;
+		case 4:
+			*(uint32_t*)retbuf = (uint32_t)getShiftBufferIn(nbits);
+			break;
+		default:
+			break;
+	}
+}
+
+uint32_t FlexIOSPI::transferNBits(uint32_t w_out,uint8_t nbits){
 	// Need to do some validation...
-	uint8_t return_val ;
-
+	
+	uint32_t return_val ;
+	uint16_t timcmp_save = _pflex->port().TIMCMP[_timer];	// remember value coming in
+	_pflex->port().TIMCMP[_timer] = (timcmp_save & 0xff) | (nbits*2-1)<<8; // Adjust transmission length to nbits
+	//Serial.printf("TCMP bits = %x\n",_pflex->port().TIMCMP[_timer]);
 	// Now lets wait for something to come back.
 	uint16_t timeout = 0xffff;	// don't completely hang
 	// Clear any current pending RX input 
 	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
-		return_val = *_shiftBufInReg;
+		return_val = getShiftBufferIn(nbits);
 	}
 
-	*_shiftBufOutReg = b;
+	setShiftBufferOut(w_out,nbits);
 
 	return_val = 0xff;
 	while (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && (--timeout)) ;
 
 	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
-		return_val = *_shiftBufInReg & 0xff;
+		return_val = getShiftBufferIn(nbits);
 	}
 
+	_pflex->port().TIMCMP[_timer] = timcmp_save;
 	return return_val;
 }
 
-uint16_t FlexIOSPI::transfer16(uint16_t w) 
-{
-#if 0	
-	uint16_t return_val = 0xffff;
-	uint16_t timcmp_save = _pflex->port().TIMCMP[_timer];	// remember value coming in
-	_pflex->port().TIMCMP[_timer] = (timcmp_save & 0xff) | 0x1f00; // Try turning on 16 bit mode
-
-	*_shiftBufOutReg = w;
-
-	// Now lets wait for something to come back.
-	uint16_t timeout = 0xffff;	// don't completely hang
-	while (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && (--timeout)) ;
-
-	if (_pflex->port().SHIFTSTAT & _rx_shifter_mask) {
-		return_val = *_shiftBufInReg & 0xffff;
+void FlexIOSPI::transferBufferNBits(const void * buf, void * retbuf, size_t count, uint8_t nbits) {
+	if(!nbits) nbits = _nTransferBits;
+	uint8_t bytestride = (nbits-1)/8 + 1;
+	if(bytestride == 3){
+		bytestride = 4;
 	}
-
-	_pflex->port().TIMCMP[_timer] = timcmp_save; // (8 bits?)0x3f01; // ???0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
-	return return_val;
-#else
-	uint8_t msb = transfer(w >> 8);
-	uint8_t lsb = transfer(w & 0xff);	
-	return (uint16_t)(msb << 8) | lsb;
-#endif
-}
-
-void FlexIOSPI::transfer(const void * buf, void * retbuf, size_t count) {
 	uint32_t tx_count = count;
 	const uint8_t *tx_buffer = (const uint8_t*)buf;
 	uint8_t *rx_buffer = (uint8_t*)retbuf;
-	uint8_t ch_out = tx_buffer? *tx_buffer++ : _transferWriteFill;
+	
 	if (count <= 0) return;	// bail if 0 count passed in.
 
 	// put out the first character. 
 	_pflex->port().SHIFTERR = _rx_shifter_mask | _tx_shifter_mask;	// clear out any previous errors
 	while (!(_pflex->port().SHIFTSTAT & _tx_shifter_mask))  ; // wait for room for the first character
-	*_shiftBufOutReg = ch_out;
-	if (tx_buffer) 
-		ch_out = *tx_buffer++;
+
+	if (tx_buffer){
+		setShiftBufferOut(tx_buffer,nbits,bytestride);
+		tx_buffer += bytestride;
+	}
 	tx_count--;
 	while (tx_count) {
 		 // wait for room for the next character
 		while (!(_pflex->port().SHIFTSTAT & _tx_shifter_mask))  ;
-		*_shiftBufOutReg = ch_out;
-		if (tx_buffer) 
-			ch_out = *tx_buffer++;
+
+		if (tx_buffer) {
+			setShiftBufferOut(tx_buffer,nbits,bytestride);
+			tx_buffer += bytestride;
+		}
 		tx_count--;
 
 		// Wait for data to come back
 		while  (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask)) ;
-		uint8_t ch = *_shiftBufInReg & 0xff;
-		if (rx_buffer) 
-			*rx_buffer++ = ch;
+
+		if (rx_buffer){
+			getShiftBufferIn(rx_buffer,nbits,bytestride);
+			rx_buffer += bytestride;
+		}
+			
 	}
 	// wait for last character to come back...  
 	while  (!(_pflex->port().SHIFTSTAT & _rx_shifter_mask) && !(_pflex->port().SHIFTERR & _rx_shifter_mask)) ;
-	uint8_t ch = *_shiftBufInReg & 0xff;
-	if (rx_buffer) 
-		*rx_buffer++ = ch;
+
+	if (rx_buffer){
+		getShiftBufferIn(rx_buffer,nbits,bytestride);
+		rx_buffer += bytestride;
+	}
+		
 }
 
 
@@ -434,7 +482,6 @@ bool FlexIOSPI::transfer(const void *buf, void *retbuf, size_t count, EventRespo
 	}
 
 	// Now See if caller passed in a source buffer. 
-	_dmaTX->TCD->ATTR_DST = 0;		// Make sure set for 8 bit mode
 	uint8_t *write_data = (uint8_t*) buf;
 	if (buf) {
 		_dmaTX->sourceBuffer((uint8_t*)write_data, count);  
@@ -444,18 +491,19 @@ bool FlexIOSPI::transfer(const void *buf, void *retbuf, size_t count, EventRespo
 		_dmaTX->source((uint8_t&)_transferWriteFill);   // maybe have setable value
 		_dmaTX->transferCount(count);
 	}	
+	_dmaTX->transferSize(_nTransferBytes);
+
 	if (retbuf) {
 		// On T3.5 must handle SPI1/2 differently as only one DMA channel
-		_dmaRX->TCD->ATTR_SRC = 0;		//Make sure set for 8 bit mode...
 		_dmaRX->destinationBuffer((uint8_t*)retbuf, count);
 		_dmaRX->TCD->DLASTSGA = 0;		// At end point after our bufffer
 		if ((uint32_t)retbuf >= 0x20200000u)  arm_dcache_delete(retbuf, count);
 	} else {
 			// Write  only mode
-		_dmaRX->TCD->ATTR_SRC = 0;		//Make sure set for 8 bit mode...
 		_dmaRX->destination((uint8_t&)bit_bucket);
 		_dmaRX->transferCount(count);
 	}
+	_dmaRX->transferSize(_nTransferBytes);
 
 	_dma_event_responder = &event_responder;
 	// Now try to start it?
