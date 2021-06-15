@@ -232,9 +232,9 @@ uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
   	// Now lets walk through all of the pins associated with this object. 
 	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
   		if (hardware().io_pin[i] == pin) {
-			#ifdef DEBUG_FlexIO
+#ifdef DEBUG_FlexIO
 			Serial.println("Enable flexio clock");
-			#endif
+#endif
 			hardware().clock_gate_register |= hardware().clock_gate_mask;
 
 			return hardware().flex_pin[i];
@@ -421,7 +421,9 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 		// PLL4 - We may need to enable this clock!
 		CCM_ANALOG_PLL_VIDEO_CLR = CCM_ANALOG_PLL_ARM_POWERDOWN | CCM_ANALOG_PLL_ARM_BYPASS;
 		CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_ARM_ENABLE;
+#ifdef DEBUG_FlexIO 
 		Serial.printf("CCM_ANALOG_PLL_VIDEO: %x\n", CCM_ANALOG_PLL_VIDEO);
+#endif
 	}
 	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
 		// FlexIO1... 
