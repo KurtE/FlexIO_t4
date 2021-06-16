@@ -28,13 +28,17 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		if (_tx_pflex != nullptr)  {
 			_tx_flex_pin = _tx_pflex->mapIOPinToFlexPin(_txPin);
 			if (_tx_flex_pin == 0xff) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to map TX pin %d to FlexIO\n", _txPin);
 				return false;
+#endif
 			}
 		} else {
 			_tx_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_txPin, _tx_flex_pin);
 			if (_tx_pflex == nullptr) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to map TX pin %d to FlexIO\n", _txPin);
+#endif
 				return false;
 			}
 
@@ -50,25 +54,33 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #endif		
 		if (_tx_timer <= 3) {
 			if (!_tx_pflex->claimTimer(_tx_timer)) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim TX timer(%d)\n", _tx_timer);
+#endif
 				return false;
 			}
 		} else {
 			_tx_timer = _tx_pflex->requestTimers();
 			if (_tx_timer == 0xff) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate TX timer(%d)\n", _tx_timer);
+#endif
 				return false;
 			}
 		}
 		if (_tx_shifter <= 3) {
 			if (!_tx_pflex->claimShifter(_tx_shifter)) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim TX shifter(%d)\n", _tx_shifter);
+#endif
 				return false;
 			}
 		} else {
 			_tx_shifter = _tx_pflex->requestShifter();
 			if (_tx_shifter == 0xff) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate TX shifter(%d)\n", _tx_shifter);
+#endif
 				return false;
 			}
 		}
@@ -126,13 +138,17 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		if (_rx_pflex != nullptr)  {
 			_rx_flex_pin = _rx_pflex->mapIOPinToFlexPin(_rxPin);
 			if (_rx_flex_pin == 0xff) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to map RX pin %d to FlexIO\n", _rxPin);
+#endif
 				return false;
 			}
 		} else {
 			_rx_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_rxPin, _rx_flex_pin);
 			if (_rx_pflex == nullptr) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to map RX pin %d to FlexIO\n", _rxPin);
+#endif
 				return false;
 			}
 
@@ -148,19 +164,25 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #endif		
 		if (_rx_timer <= 3) {
 			if (!_rx_pflex->claimTimer(_rx_timer)) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim RX timer(%d)\n", _rx_timer);
+#endif
 				return false;
 			}
 		} else {
 			_rx_timer = _rx_pflex->requestTimers();
 			if (_rx_timer == 0xff) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate RX timer(%d)\n", _rx_timer);
+#endif
 				return false;
 			}
 		}
 		if (_rx_shifter <= 3) {
 			if (!_rx_pflex->claimShifter(_rx_shifter)) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim RX shifter(%d)\n", _rx_shifter);
+#endif
 				return false;
 			}
 		} else {
@@ -169,7 +191,9 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 
 			_rx_shifter = _rx_pflex->requestShifter(dma_channel_to_avoid);
 			if (_rx_shifter == 0xff) {
+#ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate RX shifter(%d)\n", _rx_shifter);
+#endif
 				return false;
 			}
 		}
@@ -177,9 +201,9 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 
 #ifdef DEBUG_FlexSerial
 		Serial.printf("timer index: %d shifter index: %d mask: %x\n", _rx_timer, _rx_shifter, _rx_shifter_mask);
-#endif
 		// lets try to configure a receiver like example
 		Serial.println("Before configure flexio");
+#endif
 		p->SHIFTCFG[_rx_shifter] = FLEXIO_SHIFTCFG_SSTOP(3) | FLEXIO_SHIFTCFG_SSTART(2); //0x0000_0032;
 		p->SHIFTCTL[_rx_shifter] = FLEXIO_SHIFTCTL_TIMPOL | FLEXIO_SHIFTCTL_SMOD(1) |
 		                              FLEXIO_SHIFTCTL_TIMSEL(_rx_timer) | FLEXIO_SHIFTCTL_PINSEL(_rx_flex_pin); // 0x0080_0001;
@@ -239,7 +263,9 @@ void FlexSerial::flush(void) {
 	uint32_t start_time = millis();
 	while (_transmitting) {
 		if ((millis()-start_time) > FLUSH_TIMEOUT) {
+#ifdef DEBUG_FlexSerial
 			Serial.println("*** FlexSerial::flush Timeout ***");
+#endif
 			return;
 		}
 		yield(); // wait

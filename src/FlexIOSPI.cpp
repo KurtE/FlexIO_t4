@@ -18,7 +18,9 @@ bool FlexIOSPI::begin() {
 	//-------------------------------------------------------------------------
 	_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_mosiPin, _mosi_flex_pin);
 	if (!_pflex) {
+#ifdef DEBUG_FlexSPI
 		Serial.printf("FlexIOSPI - Mosi pin does not map to flex controller\n");
+#endif
 		return false;
 	}
 	//Serial.printf("FlexIOSPI Begin: Mosi map %d %x %d\n", _mosiPin, (uint32_t)_pflex, _mosi_flex_pin);
@@ -36,28 +38,36 @@ bool FlexIOSPI::begin() {
 			_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_miso_flex_pin, _miso_flex_pin); 			
  		}
  		if (!_pflex) {
-			Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
-			return false;
- 		}
+#ifdef DEBUG_FlexSPI
+				Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
+#endif
+				return false;
+		}
 
 		_mosi_flex_pin = _pflex->mapIOPinToFlexPin(_mosiPin);
 		_sck_flex_pin = _pflex->mapIOPinToFlexPin(_sckPin);
 		_miso_flex_pin = _pflex->mapIOPinToFlexPin(_misoPin);
  		if ((_sck_flex_pin == 0xff) || (_miso_flex_pin == 0xff) || (_mosi_flex_pin == 0xff)) {
+#ifdef DEBUG_FlexSPI
 			Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
+#endif
 			return false;
  		}
  		#else
  			// 1052 don't have pins that map to different FLEXIO controllers
+#ifdef DEBUG_FlexSPI
 			Serial.printf("FlexIOSPI - not all pins mapped to same Flex controller\n");
+#endif
 			return false;
- 		#endif
+#endif
  	}
 	//FlexIOHandler *cs_flex = _pflex;
 	if (_csPin != -1) {
 		_cs_flex_pin = _pflex->mapIOPinToFlexPin(_csPin);
 		if (_cs_flex_pin == 0xff) {
+#ifdef DEBUG_FlexSPI
 			Serial.printf("FlexIOSPI - not all pins(CS) mapped to same Flex controller\n");
+#endif
 			return false;			
 		}
 	}
@@ -80,7 +90,9 @@ bool FlexIOSPI::begin() {
 		_pflex->freeShifter(_rx_shifter);
 		_tx_shifter = 0xff;
 		_rx_shifter = 0xff;
+#ifdef DEBUG_FlexSPI
 		Serial.println("FlexIOSPI - Failed to allocate timers or shifters");
+#endif
 		return false;
 	}
 
