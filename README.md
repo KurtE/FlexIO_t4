@@ -110,11 +110,36 @@ Ranges: 0-3,6-11,14-17
 
 Library details
 ===============
-<to be filled in>
 
-Examples:
----------
+FlexIOHandler
+-------------
 
+The top level class in this library is the class: FlexIOHandler, which tries to do some limited resourse management.
+Like mapping an IO pin to which FlexIO object is is on and the actual item on that flexio object.  It also then
+allocates other resources like timers and shifters.
+
+There are also a few methods to help with the CCM (Clock Management), for example:
+```
+    uint32_t computeClockRate();
+```
+Returns the speed that the specified FlexIO is running at, which is controlled by registers in CCM.  Default is 480M/16
+or 30000000
+
+You can update this with the method:
+
+```
+    // clksel(0-3PLL4, Pll3 PFD2 PLL5, *PLL3_sw)
+    // clk_pred(0, *1, 2, 7) - divide (n+1)
+    // clk_podf(0, *7) divide (n+1)
+    // So default is 480mhz/16
+    void setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf);
+```
+
+The main reason for the desire to for example allow slower baud/clock rates with the SPI and Uart code.
+
+For example with the FlexSerial object, the Baud divider is one byte so without updating the clock speed 
+So the default of 30000000 and max divide by 256 = min Baud of 117,187.5/ 2 = 58,594
+Now setting the pred to 7 your minimum baud reduces to: 29296.875 / 2 about 14,648
 
 Future Updates
 ==============

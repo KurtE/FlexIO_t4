@@ -2,7 +2,7 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
-//#define DEBUG_FlexSerial
+#define DEBUG_FlexSerial
 //#define DEBUG_FlexSerial_CALL_BACK
 //#define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalToggleFast(pin)	digitalWriteFast(pin, !digitalReadFast(pin));
@@ -21,6 +21,8 @@
 bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 	// BUGBUG - may need to actual Clocks to computer baud...
 	uint16_t baud_div =  (FLEXIO1_CLOCK/baud)/2 - 1;                                   
+
+
 	//-------------------------------------------------------------------------
 	// TX Pin setup - if requested
 	//-------------------------------------------------------------------------
@@ -41,6 +43,16 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #endif
 				return false;
 			}
+			// See if we can cmpute based off of Actual setting CCM clock settings
+			uint32_t clock_speed = _tx_pflex->computeClockRate() / 2;   // get speed divide by 
+			baud_div = clock_speed / baud;
+			if (baud_div > 256) baud_div = 256;
+			uint32_t effective_baud_above = clock_speed / baud_div;
+			uint32_t effective_baud_below = clock_speed / (baud_div + 1);
+			if ((baud_div == 256) || ((effective_baud_above - baud) <= (baud - effective_baud_below))) baud_div -= 1;
+#ifdef DEBUG_FlexSerial
+			Serial.printf("FlexSerial::begin(%u) - %u %u (%u %u)\n", baud, clock_speed, baud_div, effective_baud_below, effective_baud_above);
+#endif
 
 		}
 		// BUGBUG need to handle restarts...
@@ -208,6 +220,16 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		p->SHIFTCTL[_rx_shifter] = FLEXIO_SHIFTCTL_TIMPOL | FLEXIO_SHIFTCTL_SMOD(1) |
 		                              FLEXIO_SHIFTCTL_TIMSEL(_rx_timer) | FLEXIO_SHIFTCTL_PINSEL(_rx_flex_pin); // 0x0080_0001;
 
+		// See if we can cmpute based off of Actual setting CCM clock settings
+		uint32_t clock_speed = _tx_pflex->computeClockRate() / 2;   // get speed divide by 
+		baud_div = clock_speed / baud;
+		if (baud_div > 256) baud_div = 256;
+		uint32_t effective_baud_above = clock_speed / baud_div;
+		uint32_t effective_baud_below = clock_speed / (baud_div + 1);
+		if ((baud_div == 256) || ((effective_baud_above - baud) <= (baud - effective_baud_below))) baud_div -= 1;
+#ifdef DEBUG_FlexSerial
+		Serial.printf("FlexSerial::begin(%u)RX - %u %u (%u %u)\n", baud, clock_speed, baud_div, effective_baud_below, effective_baud_above);
+#endif
 		p->TIMCMP[_rx_timer] = 0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
 		p->TIMCFG[_rx_timer] = FLEXIO_TIMCFG_TSTART | FLEXIO_TIMCFG_TSTOP(2) |
 		                          FLEXIO_TIMCFG_TIMENA(4) | FLEXIO_TIMCFG_TIMDIS(2) |
