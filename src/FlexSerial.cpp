@@ -2,7 +2,7 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
-#define DEBUG_FlexSerial
+//#define DEBUG_FlexSerial
 //#define DEBUG_FlexSerial_CALL_BACK
 //#define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalToggleFast(pin)	digitalWriteFast(pin, !digitalReadFast(pin));
@@ -353,7 +353,7 @@ int FlexSerial::available(void) {
 
 int FlexSerial::peek(void) {
 	if (_rx_buffer_head == _rx_buffer_tail) return -1;
-	return _rx_buffer[_tx_buffer_tail] ;
+	return _rx_buffer[_rx_buffer_tail] ;
 }
 
 int FlexSerial::read(void) {
@@ -392,7 +392,7 @@ bool FlexSerial::call_back (FlexIOHandler *pflex) {
 			head = _rx_buffer_head;
 			if (++head >= RX_BUFFER_SIZE) head = 0;
 			// don't save char if buffer is full...
-			if (_tx_buffer_tail != head) {
+			if (_rx_buffer_tail != head) {
 				_rx_buffer[_rx_buffer_head] = c;
 				_rx_buffer_head = head;
 			}

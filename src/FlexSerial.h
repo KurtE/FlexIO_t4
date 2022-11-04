@@ -84,22 +84,22 @@ private:
 	// Variables for tranmitter
 	FlexIOHandler *_tx_pflex = nullptr;
 
-	uint8_t 		_tx_flex_pin;
-	uint8_t 		_tx_shifter_mask;
-	uint8_t			_tx_buffer[TX_BUFFER_SIZE];
-	uint16_t		_tx_buffer_head = 0;
-	uint16_t 		_tx_buffer_tail = 0;
+	uint8_t 			_tx_flex_pin;
+	uint8_t 			_tx_shifter_mask;
+	uint8_t				_tx_buffer[TX_BUFFER_SIZE];
+	volatile uint16_t	_tx_buffer_head = 0;
+	volatile uint16_t 	_tx_buffer_tail = 0;
 	volatile uint8_t	_transmitting = 0;
-	uint8_t			_tx_timer_mask = 0;
+	uint8_t				_tx_timer_mask = 0;
 	static const uint32_t FLUSH_TIMEOUT = 1000;	// 1 second... 
 
 	// Variables for receiver
-	FlexIOHandler *_rx_pflex = nullptr;
-	uint8_t 		_rx_flex_pin;
-	uint8_t 		_rx_shifter_mask;
-	uint8_t			_rx_buffer[RX_BUFFER_SIZE];
-	uint16_t		_rx_buffer_head = 0;
-	uint16_t 		_rx_buffer_tail = 0;
+	FlexIOHandler *		_rx_pflex = nullptr;
+	uint8_t 			_rx_flex_pin;
+	uint8_t 			_rx_shifter_mask;
+	uint8_t				_rx_buffer[RX_BUFFER_SIZE];
+	volatile uint16_t	_rx_buffer_head = 0;
+	volatile uint16_t 	_rx_buffer_tail = 0;
 
 
 };
