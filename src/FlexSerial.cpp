@@ -347,8 +347,8 @@ int FlexSerial::available(void) {
 
 	head = _rx_buffer_head;
 	tail = _rx_buffer_tail;
-	if (head >= tail) return RX_BUFFER_SIZE - 1 - head + tail;
-	return tail - head - 1;
+	if (head >= tail) return head - tail;
+	return RX_BUFFER_SIZE - tail + head;
 }
 
 int FlexSerial::peek(void) {
