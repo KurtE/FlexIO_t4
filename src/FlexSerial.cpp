@@ -2,7 +2,7 @@
 #define BAUDRATE 115200
 #define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
-//#define DEBUG_FlexSerial
+#define DEBUG_FlexSerial
 //#define DEBUG_FlexSerial_CALL_BACK
 //#define DEBUG_digitalWriteFast(pin, state) digitalWriteFast(pin, state)
 //#define DEBUG_digitalToggleFast(pin)	digitalWriteFast(pin, !digitalReadFast(pin));
@@ -106,15 +106,21 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		// lets try to configure a tranmitter like example
 		Serial.println("Before configure flexio");
 #endif
-		p->SHIFTCFG[_tx_shifter] = FLEXIO_SHIFTCFG_SSTOP(3) | FLEXIO_SHIFTCFG_SSTART(2); //0x0000_0032;
-		p->SHIFTCTL[_tx_shifter] = FLEXIO_SHIFTCTL_PINCFG(3) | FLEXIO_SHIFTCTL_SMOD(2) |
-		                              FLEXIO_SHIFTCTL_TIMSEL(_tx_timer) | FLEXIO_SHIFTCTL_PINSEL(_tx_flex_pin); // 0x0003_0002;
-		p->TIMCMP[_tx_timer] = 0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
-		p->TIMCFG[_tx_timer] = FLEXIO_TIMCFG_TSTART | FLEXIO_TIMCFG_TSTOP(2) |
-		                          FLEXIO_TIMCFG_TIMENA(2) |  FLEXIO_TIMCFG_TIMDIS(2); //0x0000_2222;
-		p->TIMCTL[_tx_timer] = FLEXIO_TIMCTL_TIMOD(1) | FLEXIO_TIMCTL_TRGPOL | FLEXIO_TIMCTL_TRGSRC
-		                          | FLEXIO_TIMCTL_TRGSEL(4*_tx_shifter + 1) | FLEXIO_TIMCTL_PINSEL(_tx_flex_pin);  // 0x01C0_0001;
-
+		p->SHIFTCFG[_tx_shifter] = FLEXIO_SHIFTCFG_SSTOP(3) |
+						FLEXIO_SHIFTCFG_SSTART(2); // 0x0000_0032
+		p->SHIFTCTL[_tx_shifter] = FLEXIO_SHIFTCTL_MODE_TRANSMIT |
+						FLEXIO_SHIFTCTL_PINMODE_OUTPUT |
+						FLEXIO_SHIFTCTL_PINSEL(_tx_flex_pin) |
+						FLEXIO_SHIFTCTL_TIMSEL(_tx_timer); // 0x0003_0002
+		p->TIMCMP[_tx_timer] = 0xf00 | baud_div; // 0x0000_0F01
+		p->TIMCFG[_tx_timer] = FLEXIO_TIMCFG_ENABLE_WHEN_TRIGGER_HIGH |
+					FLEXIO_TIMCFG_DISABLE_ON_8BIT_MATCH |
+					FLEXIO_TIMCFG_STARTBIT_ENABLED |
+					FLEXIO_TIMCFG_STOPBIT_ENABLE_ON_TIMER_DISABLE; // 0x0000_2222
+		p->TIMCTL[_tx_timer] = FLEXIO_TIMCTL_MODE_8BIT_BAUD |
+					FLEXIO_TIMCTL_TRIGGER_SHIFTER(_tx_shifter) |
+					FLEXIO_TIMCTL_TRIGGER_ACTIVE_LOW |
+					FLEXIO_TIMCTL_PINSEL(_tx_flex_pin); // 0x01C0_0001
 		__disable_irq();
 		p->CTRL = FLEXIO_CTRL_FLEXEN;
 		//p->SHIFTSTAT = _tx_shifter_mask;   // Clear out the status. Maybe causes NULL char to output?
