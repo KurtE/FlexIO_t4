@@ -381,9 +381,23 @@ bool FlexIOHandler::removeIOHandlerCallback(FlexIOHandlerCallback *callback) {
 //-----------------------------------------------------------------------------
 // Compute the Flex IO clock rate. 
 //-----------------------------------------------------------------------------
+
+static float pll_fractional(uint32_t reg, uint32_t numerator, uint32_t denominator, uint32_t postdiv)
+{
+	float mult = (float)(reg & 127) + (float)numerator / (float)denominator;
+	float freq = 24.0e6f * mult;
+	uint32_t div = (reg >> 19) & 3;
+	if (div == 0) freq *= 0.25f;
+	else if (div == 1) freq *= 0.5f;
+	if (postdiv == 1) return freq * 0.5f;
+	if (postdiv == 3) return freq * 0.25f;
+	return freq;
+}
+
 uint32_t FlexIOHandler::computeClockRate()  {
 	// Todo: add all of this stuff into hardware()... 
 	uint32_t pll_clock; // = 480000000U;	// Assume PPL3_SEL
+	uint32_t misc2;
 	uint8_t clk_sel;
 	uint8_t clk_pred;
 	uint8_t clk_podf;
@@ -400,10 +414,21 @@ uint32_t FlexIOHandler::computeClockRate()  {
 	}
 	// TODO - look at the actual clock select
 	switch (clk_sel) {
-		case 1: 
+		case 0: // PLL4-Audio
+			misc2 = CCM_ANALOG_MISC2;
+			pll_clock = pll_fractional(CCM_ANALOG_PLL_AUDIO,
+				CCM_ANALOG_PLL_AUDIO_NUM, CCM_ANALOG_PLL_AUDIO_DENOM,
+				((misc2 >> 22) & 0x02) | ((misc2 >> 15) & 0x01));
+			break;
+		case 1: // PLL3-PFD2
 			pll_clock = 508240000U;
 			break;
-		case 3:
+		case 2: // PLL5-Video
+			pll_clock = pll_fractional(CCM_ANALOG_PLL_VIDEO,
+				CCM_ANALOG_PLL_VIDEO_NUM, CCM_ANALOG_PLL_VIDEO_DENOM,
+				(CCM_ANALOG_MISC2 >> 30) & 0x03);
+			break;
+		case 3: // PLL3-USB
 		default: 
 			pll_clock = 480000000U;
 			break;
