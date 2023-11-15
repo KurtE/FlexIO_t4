@@ -111,6 +111,10 @@ public:
 	// So default is 480mhz/16
 	void setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf);
 
+	float setClock(float frequency);
+	float setClockUsingAudioPLL(float frequency);
+	float setClockUsingVideoPLL(float frequency);
+
 	void IRQHandler(void);
 
 protected: 

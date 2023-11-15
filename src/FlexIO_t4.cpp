@@ -473,4 +473,162 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 		hardware().clock_gate_register |= hardware().clock_gate_mask;
 	}
 }
+
+
+// Find the closest pair of FlexIO clock divides to an ideal desired divide ratio.
+// Each divide 1-8 is returned in a 4 bit nibble.  Optionally return the error too.
+static uint8_t best_flexio_div(float ideal_div, float *error) {
+	static const uint8_t uniquediv[] = {
+		0x88, 0x87, 0x77, 0x86, 0x76, 0x85, 0x66, 0x75,
+		0x84, 0x65, 0x74, 0x55, 0x83, 0x73, 0x54, 0x63,
+		0x82, 0x53, 0x72, 0x62, 0x52, 0x33, 0x81, 0x71,
+		0x61, 0x51, 0x41, 0x31, 0x21, 0x11};
+	unsigned int best_index = 0;
+	float best_error = 1e100/*FLT_MAX*/;
+	for (unsigned int i=0; i < sizeof(uniquediv); i++) {
+		float actual_div = ((uniquediv[i] >> 4) & 15) * (uniquediv[i] & 15);
+		float actual_error = fabsf(actual_div - ideal_div);
+		if (actual_error < best_error) {
+			best_error = actual_error;
+			best_index = i;
+		}
+	}
+	if (error) *error = best_error;
+	return uniquediv[best_index];
+}
+
+float FlexIOHandler::setClock(float frequency) {
+	Serial.printf("setClock frequency =  %.0f\n", frequency);
+	float error480, error508;
+	uint8_t div480 = best_flexio_div(480.0e6f / frequency, &error480);
+	uint8_t div508 = best_flexio_div(508.24e6f / frequency, &error508);
+	Serial.printf("div480 is %02X, error %.2f\n", div480, error480);
+	Serial.printf("div508 is %02X, error %.2f\n", div508, error508);
+	unsigned int div1, div2;
+	if (error480 <= error508) {
+		div1 = (div480 >> 4) & 15;
+		div2 = div480 & 15;
+		setClockSettings(3, div1 - 1, div2 - 1);
+		frequency = 480.0e6f / (div1 * div2);
+	} else {
+		div1 = (div508 >> 4) & 15;
+		div2 = div508 & 15;
+		setClockSettings(1, div1 - 1, div2 - 1);
+		frequency = 508.24e6f / (div1 * div2);
+	}
+	Serial.printf("actual frequency =  %.0f\n", frequency);
+	return frequency;
+}
+
+
+static float best_pll_config(float frequency, uint8_t &pll_multiply, uint32_t &pll_numerator,
+                           uint32_t &pll_denominator, uint8_t &pll_divs, uint8_t &flexio_divs) {
+	// First choose the PLL's post divide.  Higher final frequency
+	// requires the PLL to output a higher range.  Choose the
+	// slowest (most divided down within the PLL) workable range.
+	const float PLL_MIN = 650000000; // 650 MHz
+	if (frequency > PLL_MIN / 4) {
+		pll_divs = 0x21;
+	} else if (frequency > PLL_MIN / 8) {
+		pll_divs = 0x41;
+	} else if (frequency > PLL_MIN / 16) {
+		pll_divs = 0x42;
+	} else {
+		pll_divs = 0x44;
+	}
+	unsigned int pll_div = (pll_divs >> 4) * (pll_divs & 15);
+	Serial.printf(" pll_div = %u\n", pll_div);
+
+	// Compute the "ideal" FlexIO divider which would operate the
+	// PLL exactly at the center of its usable range (650 MHz to 1.3 GHz)
+	float ideal_flexio_div = 975.0e6f / frequency / pll_div;
+	Serial.printf(" ideal_flexio_div = %.2f\n", ideal_flexio_div);
+
+	// Find the closest FlexIO divider and compute the needed PLL frequency
+	unsigned char flexio_div = best_flexio_div(ideal_flexio_div, NULL);
+	unsigned int actual_flexio_div = ((flexio_div >> 4) & 15) * (flexio_div & 15);
+	Serial.printf(" actual_flexio_div = %u\n", actual_flexio_div);
+	float pll_freq = frequency * pll_div * actual_flexio_div;
+	Serial.printf(" pll_freq = %.0f\n", pll_freq);
+
+	// Compute the PLL configuration to achieve this frequency
+	float pll_mult = pll_freq / 24.0e6f;
+	if (pll_mult < 27.083f) pll_mult = 27.083f;
+	if (pll_mult > 54.167f) pll_mult = 54.167f;
+	Serial.printf(" pll_mult = %.3f\n", pll_mult);
+	float pll_mult_integer, pll_mult_fraction;
+	pll_mult_fraction = modff(pll_mult, &pll_mult_integer);
+	pll_multiply = pll_mult_integer;
+	pll_denominator = 0x1FFFFFFF;
+	pll_numerator = pll_denominator * pll_mult_fraction;
+	Serial.printf(" pll_multiply = %u\n", pll_multiply);
+	Serial.printf(" pll_numerator = %08X\n", pll_numerator);
+	Serial.printf(" pll_denominator = %08X\n", pll_denominator);
+
+	// Return the actual frequency using all these settings
+	frequency = 24.0e6f * ((float)pll_multiply + (float)pll_numerator / (float)pll_denominator)
+		/ (float)(pll_div * actual_flexio_div);
+	Serial.printf(" actual frequency = %.0f\n", frequency);
+	return frequency;
+}
+
+
+
+
+float FlexIOHandler::setClockUsingAudioPLL(float frequency) {
+	
+
+	return 0;
+}
+
+float FlexIOHandler::setClockUsingVideoPLL(float frequency) {
+
+	Serial.printf("setClockUsingVideoPLL: freq = %.0f\n", frequency);
+	uint8_t pll_multiply;
+	uint32_t pll_numerator, pll_denominator;
+	uint8_t pll_divs, flexio_divs;
+	frequency = best_pll_config(frequency, pll_multiply, pll_numerator,
+		pll_denominator, pll_divs, flexio_divs);
+	// TODO: handle PLL already running?
+	uint8_t post_div_select = 0; // 0 means div by 4 (ref manual rev 3, page 1109)
+	if ((pll_divs >> 4) == 2) post_div_select = 1; // 1 means div by 2
+	CCM_ANALOG_PLL_VIDEO = CCM_ANALOG_PLL_VIDEO_DIV_SELECT(pll_multiply) |
+		CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(post_div_select) |
+		CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC(0);
+	CCM_ANALOG_PLL_VIDEO_NUM = pll_numerator;
+	CCM_ANALOG_PLL_VIDEO_DENOM = pll_denominator;
+	uint8_t video_div = 0; // 0 means div by 1 (ref manual rev 3, page 1127)
+	if ((pll_divs & 15) == 2) video_div = 1; // 1 means div by 2
+	if ((pll_divs & 15) == 4) video_div = 3; // 3 means div by 5
+	CCM_ANALOG_MISC2_CLR = CCM_ANALOG_MISC2_VIDEO_DIV(3);
+	CCM_ANALOG_MISC2_SET = CCM_ANALOG_MISC2_VIDEO_DIV(video_div);
+	CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_VIDEO_ENABLE;
+	setClockSettings(2, (flexio_divs >> 4) - 1, (flexio_divs & 15) - 1);
+
+  // Configure PLL5 for 58.9824 MHz (which is 921600 baud * 64)
+//  CCM_ANALOG_PLL_VIDEO = CCM_ANALOG_PLL_VIDEO_DIV_SELECT(39) |  // 24 MHz * 39
+//                         CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC(0) |
+//                         CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(0); // div by 4
+//  CCM_ANALOG_PLL_VIDEO_NUM = 16777216;
+//  CCM_ANALOG_PLL_VIDEO_DENOM = 52167960;  // add 0.3216 to mult=39
+//  CCM_ANALOG_MISC2_SET = CCM_ANALOG_MISC2_VIDEO_DIV(3);  // postdiv by 4
+//  CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_VIDEO_ENABLE;
+  // TODO: wait for PLL lock
+
+
+	return frequency;
+}
+
+//1
+//2
+//4
+//8
+//16
+
+
+
+
+
+
+
 #endif
