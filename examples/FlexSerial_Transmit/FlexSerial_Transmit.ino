@@ -21,6 +21,11 @@ void setup() {
 
   Serial3.begin(115200);  // lets start up Serial3, to see if we can receive anything from our FlexSerial
   delay(500);
+
+  // Before calling begin(), you can reconfigure the FlexIO clock for better baud rates
+  //SerialFlex.setClock(9795918); // more accurate baud rates, 115200 to 19200 baud
+  //SerialFlex.setClockUsingVideoPLL(921600); // very accurate std rates, works down to 1800 baud
+  // the default clock is very fast: slowest baud rate is 58824
   Serial.println("Before SerialFlex.begin"); Serial.flush();
   SerialFlex.begin(115200);
   Serial.println("After SerialFlex.begin"); Serial.flush();

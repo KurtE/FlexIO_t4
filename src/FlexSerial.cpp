@@ -1,6 +1,4 @@
 #include "FlexSerial.h"
-#define BAUDRATE 115200
-#define FLEXIO1_CLOCK (480000000L/16) // Again assuming default clocks?
 
 //#define DEBUG_FlexSerial
 //#define DEBUG_FlexSerial_CALL_BACK
@@ -15,46 +13,81 @@
 #define DEBUG_PIN_WRITE_TIMER_INT 29
 
 
+FLASHMEM
+void FlexSerial::init() {
+	if (_tx_pflex == nullptr) {
+		_tx_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_txPin, _tx_flex_pin);
+	}
+	if (_rx_pflex == nullptr) {
+		_rx_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_rxPin, _rx_flex_pin);
+	}
+}
+
+FLASHMEM
+float FlexSerial::setClock(float frequency) {
+	float freqout=0;
+	init();
+	if (_tx_pflex && _rx_pflex && !_rx_pflex->usesSameClock(_tx_pflex)) {
+		freqout = _tx_pflex->setClock(frequency);
+		freqout = _rx_pflex->setClock(frequency);
+	} else {
+		if (_tx_pflex) freqout = _tx_pflex->setClock(frequency);
+		if (_rx_pflex) freqout = _rx_pflex->setClock(frequency);
+	}
+	return freqout;
+}
+
+FLASHMEM
+float FlexSerial::setClockUsingAudioPLL(float frequency) {
+	float freqout=0;
+	init();
+	if (_tx_pflex && _rx_pflex && !_rx_pflex->usesSameClock(_tx_pflex)) {
+		freqout = _tx_pflex->setClockUsingAudioPLL(frequency);
+		freqout = _rx_pflex->setClockUsingAudioPLL(frequency);
+	} else {
+		if (_tx_pflex) freqout = _tx_pflex->setClockUsingAudioPLL(frequency);
+		if (_rx_pflex) freqout = _rx_pflex->setClockUsingAudioPLL(frequency);
+	}
+	return freqout;
+}
+
+FLASHMEM
+float FlexSerial::setClockUsingVideoPLL(float frequency) {
+	float freqout=0;
+	init();
+	if (_tx_pflex && _rx_pflex && !_rx_pflex->usesSameClock(_tx_pflex)) {
+		freqout = _tx_pflex->setClockUsingVideoPLL(frequency);
+		freqout = _rx_pflex->setClockUsingVideoPLL(frequency);
+	} else {
+		if (_tx_pflex) freqout = _tx_pflex->setClockUsingVideoPLL(frequency);
+		if (_rx_pflex) freqout = _rx_pflex->setClockUsingVideoPLL(frequency);
+	}
+	return freqout;
+}
+
 //=============================================================================
 // FlexSerial::Begin
 //=============================================================================
+FLASHMEM
 bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
-	// BUGBUG - may need to actual Clocks to computer baud...
-	uint16_t baud_div =  (FLEXIO1_CLOCK/baud)/2 - 1;                                   
-
+	init();
+	if (_txPin != -1 && _tx_pflex == nullptr ) {
+#ifdef DEBUG_FlexSerial
+		Serial.printf("FlexSerial - Failed to map TX pin %d to FlexIO\n", _txPin);
+#endif
+		return false;
+	}
+	if (_rxPin != -1 && _rx_pflex == nullptr ) {
+#ifdef DEBUG_FlexSerial
+		Serial.printf("FlexSerial - Failed to map RX pin %d to FlexIO\n", _rxPin);
+#endif
+		return false;
+	}
 
 	//-------------------------------------------------------------------------
 	// TX Pin setup - if requested
 	//-------------------------------------------------------------------------
-	if (_txPin != -1) {
-		if (_tx_pflex != nullptr)  {
-			_tx_flex_pin = _tx_pflex->mapIOPinToFlexPin(_txPin);
-			if (_tx_flex_pin == 0xff) {
-#ifdef DEBUG_FlexSerial
-				Serial.printf("FlexSerial - Failed to map TX pin %d to FlexIO\n", _txPin);
-				return false;
-#endif
-			}
-		} else {
-			_tx_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_txPin, _tx_flex_pin);
-			if (_tx_pflex == nullptr) {
-#ifdef DEBUG_FlexSerial
-				Serial.printf("FlexSerial - Failed to map TX pin %d to FlexIO\n", _txPin);
-#endif
-				return false;
-			}
-			// See if we can cmpute based off of Actual setting CCM clock settings
-			uint32_t clock_speed = _tx_pflex->computeClockRate() / 2;   // get speed divide by 
-			baud_div = clock_speed / baud;
-			if (baud_div > 256) baud_div = 256;
-			uint32_t effective_baud_above = clock_speed / baud_div;
-			uint32_t effective_baud_below = clock_speed / (baud_div + 1);
-			if ((baud_div == 256) || ((effective_baud_above - baud) <= (baud - effective_baud_below))) baud_div -= 1;
-#ifdef DEBUG_FlexSerial
-			Serial.printf("FlexSerial::begin(%u) - %u %u (%u %u)\n", baud, clock_speed, baud_div, effective_baud_below, effective_baud_above);
-#endif
-
-		}
+	if (_tx_pflex) {
 		// BUGBUG need to handle restarts...
 		IMXRT_FLEXIO_t *p = &_tx_pflex->port();
 #ifdef DEBUG_FlexSerial
@@ -64,7 +97,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		else if (p == &IMXRT_FLEXIO3_S) Serial.print("(FLEXIO3)");
 		Serial.printf(" pin %u\n", _tx_flex_pin);  Serial.flush();
 #endif		
-		if (_tx_timer <= 3) {
+		if (_tx_timer <= 7) {
 			if (!_tx_pflex->claimTimer(_tx_timer)) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim TX timer(%d)\n", _tx_timer);
@@ -80,7 +113,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 				return false;
 			}
 		}
-		if (_tx_shifter <= 3) {
+		if (_tx_shifter <= 7) {
 			if (!_tx_pflex->claimShifter(_tx_shifter)) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim TX shifter(%d)\n", _tx_shifter);
@@ -97,24 +130,33 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 			}
 		}
 
-
 		_tx_shifter_mask = 1 << _tx_shifter;
 		_tx_timer_mask = 1 << _tx_timer;
+
+		float tx_clock_speed = _tx_pflex->computeClockRate();
+		uint32_t tx_baud_div = roundf(tx_clock_speed / (float)(baud * 2));
+		if (tx_baud_div > 255) tx_baud_div = 255;
 
 #ifdef DEBUG_FlexSerial
 		Serial.printf("timer index: %d shifter index: %d mask: %x\n", _tx_timer, _tx_shifter, _tx_shifter_mask);
 		// lets try to configure a tranmitter like example
 		Serial.println("Before configure flexio");
 #endif
-		p->SHIFTCFG[_tx_shifter] = FLEXIO_SHIFTCFG_SSTOP(3) | FLEXIO_SHIFTCFG_SSTART(2); //0x0000_0032;
-		p->SHIFTCTL[_tx_shifter] = FLEXIO_SHIFTCTL_PINCFG(3) | FLEXIO_SHIFTCTL_SMOD(2) |
-		                              FLEXIO_SHIFTCTL_TIMSEL(_tx_timer) | FLEXIO_SHIFTCTL_PINSEL(_tx_flex_pin); // 0x0003_0002;
-		p->TIMCMP[_tx_timer] = 0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
-		p->TIMCFG[_tx_timer] = FLEXIO_TIMCFG_TSTART | FLEXIO_TIMCFG_TSTOP(2) |
-		                          FLEXIO_TIMCFG_TIMENA(2) |  FLEXIO_TIMCFG_TIMDIS(2); //0x0000_2222;
-		p->TIMCTL[_tx_timer] = FLEXIO_TIMCTL_TIMOD(1) | FLEXIO_TIMCTL_TRGPOL | FLEXIO_TIMCTL_TRGSRC
-		                          | FLEXIO_TIMCTL_TRGSEL(4*_tx_shifter + 1) | FLEXIO_TIMCTL_PINSEL(_tx_flex_pin);  // 0x01C0_0001;
-
+		p->SHIFTCFG[_tx_shifter] = FLEXIO_SHIFTCFG_SSTOP(3) |
+						FLEXIO_SHIFTCFG_SSTART(2); // 0x0000_0032
+		p->SHIFTCTL[_tx_shifter] = FLEXIO_SHIFTCTL_MODE_TRANSMIT |
+						FLEXIO_SHIFTCTL_PINMODE_OUTPUT |
+						FLEXIO_SHIFTCTL_PINSEL(_tx_flex_pin) |
+						FLEXIO_SHIFTCTL_TIMSEL(_tx_timer); // 0x0003_0002
+		p->TIMCMP[_tx_timer] = 0xf00 | tx_baud_div; // 0x0000_0F01
+		p->TIMCFG[_tx_timer] = FLEXIO_TIMCFG_ENABLE_WHEN_TRIGGER_HIGH |
+					FLEXIO_TIMCFG_DISABLE_ON_8BIT_MATCH |
+					FLEXIO_TIMCFG_STARTBIT_ENABLED |
+					FLEXIO_TIMCFG_STOPBIT_ENABLE_ON_TIMER_DISABLE; // 0x0000_2222
+		p->TIMCTL[_tx_timer] = FLEXIO_TIMCTL_MODE_8BIT_BAUD |
+					FLEXIO_TIMCTL_TRIGGER_SHIFTER(_tx_shifter) |
+					FLEXIO_TIMCTL_TRIGGER_ACTIVE_LOW |
+					FLEXIO_TIMCTL_PINSEL(_tx_flex_pin); // 0x01C0_0001
 		__disable_irq();
 		p->CTRL = FLEXIO_CTRL_FLEXEN;
 		//p->SHIFTSTAT = _tx_shifter_mask;   // Clear out the status. Maybe causes NULL char to output?
@@ -146,25 +188,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 	//-------------------------------------------------------------------------
 	// RX Pin setup - if requested
 	//-------------------------------------------------------------------------
-	if (_rxPin != -1) {
-		if (_rx_pflex != nullptr)  {
-			_rx_flex_pin = _rx_pflex->mapIOPinToFlexPin(_rxPin);
-			if (_rx_flex_pin == 0xff) {
-#ifdef DEBUG_FlexSerial
-				Serial.printf("FlexSerial - Failed to map RX pin %d to FlexIO\n", _rxPin);
-#endif
-				return false;
-			}
-		} else {
-			_rx_pflex = FlexIOHandler::mapIOPinToFlexIOHandler(_rxPin, _rx_flex_pin);
-			if (_rx_pflex == nullptr) {
-#ifdef DEBUG_FlexSerial
-				Serial.printf("FlexSerial - Failed to map RX pin %d to FlexIO\n", _rxPin);
-#endif
-				return false;
-			}
-
-		}
+	if (_rx_pflex != nullptr)  {
 
 		IMXRT_FLEXIO_t *p = &_rx_pflex->port();
 #ifdef DEBUG_FlexSerial
@@ -174,7 +198,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		else if (p == &IMXRT_FLEXIO3_S) Serial.print("(FLEXIO3)");
 		Serial.printf(" pin %x\n", _rx_flex_pin);
 #endif		
-		if (_rx_timer <= 3) {
+		if (_rx_timer <= 7) {
 			if (!_rx_pflex->claimTimer(_rx_timer)) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim RX timer(%d)\n", _rx_timer);
@@ -190,7 +214,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 				return false;
 			}
 		}
-		if (_rx_shifter <= 3) {
+		if (_rx_shifter <= 7) {
 			if (!_rx_pflex->claimShifter(_rx_shifter)) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim RX shifter(%d)\n", _rx_shifter);
@@ -221,16 +245,11 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		                              FLEXIO_SHIFTCTL_TIMSEL(_rx_timer) | FLEXIO_SHIFTCTL_PINSEL(_rx_flex_pin); // 0x0080_0001;
 
 		// See if we can cmpute based off of Actual setting CCM clock settings
-		uint32_t clock_speed = _tx_pflex->computeClockRate() / 2;   // get speed divide by 
-		baud_div = clock_speed / baud;
-		if (baud_div > 256) baud_div = 256;
-		uint32_t effective_baud_above = clock_speed / baud_div;
-		uint32_t effective_baud_below = clock_speed / (baud_div + 1);
-		if ((baud_div == 256) || ((effective_baud_above - baud) <= (baud - effective_baud_below))) baud_div -= 1;
-#ifdef DEBUG_FlexSerial
-		Serial.printf("FlexSerial::begin(%u)RX - %u %u (%u %u)\n", baud, clock_speed, baud_div, effective_baud_below, effective_baud_above);
-#endif
-		p->TIMCMP[_rx_timer] = 0xf00 | baud_div; //0xF01; //0x0000_0F01;		//
+		float rx_clock_speed = _rx_pflex->computeClockRate();
+		uint32_t rx_baud_div = roundf(rx_clock_speed / (float)(baud * 2));
+		if (rx_baud_div > 255) rx_baud_div = 255;
+
+		p->TIMCMP[_rx_timer] = 0xf00 | rx_baud_div; //0xF01; //0x0000_0F01;		//
 		p->TIMCFG[_rx_timer] = FLEXIO_TIMCFG_TSTART | FLEXIO_TIMCFG_TSTOP(2) |
 		                          FLEXIO_TIMCFG_TIMENA(4) | FLEXIO_TIMCFG_TIMDIS(2) |
 		                          FLEXIO_TIMCFG_TIMRST(4) | FLEXIO_TIMCFG_TIMOUT(2); //0x204_2422

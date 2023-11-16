@@ -104,12 +104,13 @@ public:
 	bool removeIOHandlerCallback(FlexIOHandlerCallback *callback);
 
 	uint32_t computeClockRate();
+	bool usesSameClock(const FlexIOHandler *other);
 
-	// clksel(0-3PLL4, Pll3 PFD2 PLL5, *PLL3_sw)
-	// clk_pred(0, 1, 2, 7) - divide (n+1)
-	// clk_podf(0, *7) divide (n+1)
-	// So default is 480mhz/16
 	void setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf);
+
+	float setClock(float frequency);
+	float setClockUsingAudioPLL(float frequency);
+	float setClockUsingVideoPLL(float frequency);
 
 	void IRQHandler(void);
 
