@@ -211,7 +211,8 @@ void IRQHandler_FlexIO3() {
 //-----------------------------------------------------------------------------
 FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex_pin)
 {
-  FlexIOHandler *pflex = nullptr;
+	FlexIOHandler *pflex = nullptr;
+	if (pin == 0xff) return nullptr;
 
 	for (uint8_t iflex = 0; iflex < (sizeof(flexIOHandler_list) / sizeof(flexIOHandler_list[0])); iflex++) {
 		pflex = flexIOHandler_list[iflex];
@@ -382,6 +383,7 @@ bool FlexIOHandler::removeIOHandlerCallback(FlexIOHandlerCallback *callback) {
 // Compute the Flex IO clock rate. 
 //-----------------------------------------------------------------------------
 
+FLASHMEM
 static float pll_fractional(uint32_t reg, uint32_t numerator, uint32_t denominator, uint32_t postdiv)
 {
 	float mult = (float)(reg & 127) + (float)numerator / (float)denominator;
@@ -394,6 +396,7 @@ static float pll_fractional(uint32_t reg, uint32_t numerator, uint32_t denominat
 	return freq;
 }
 
+FLASHMEM
 uint32_t FlexIOHandler::computeClockRate()  {
 	// Todo: add all of this stuff into hardware()... 
 	uint32_t pll_clock; // = 480000000U;	// Assume PPL3_SEL
@@ -436,9 +439,20 @@ uint32_t FlexIOHandler::computeClockRate()  {
 	return pll_clock / (uint32_t)((clk_pred+1) * (clk_podf+1));
 }
 
+FLASHMEM
+bool FlexIOHandler::usesSameClock(const FlexIOHandler *other)
+{
+	const bool this_is_flexio1 = ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S);
+	const bool other_is_flexio1 = ((IMXRT_FLEXIO_t *)(other->port_addr) == &IMXRT_FLEXIO1_S);
+	if (this_is_flexio1 && other_is_flexio1) return true;
+	if (!this_is_flexio1 && !other_is_flexio1) return true; // flexio2 & flexio3 share clock
+	return false;
+}
+
 //-----------------------------------------------------------------------------
 // Try to set clock settings
 //-----------------------------------------------------------------------------
+FLASHMEM
 void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf)  {
 	// Todo: add all of this stuff into hardware()... 
 	// warning this does no validation of the values passed in...
@@ -447,7 +461,7 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 		CCM_ANALOG_PLL_VIDEO_CLR = CCM_ANALOG_PLL_ARM_POWERDOWN | CCM_ANALOG_PLL_ARM_BYPASS;
 		CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_ARM_ENABLE;
 #ifdef DEBUG_FlexIO 
-		Serial.printf("CCM_ANALOG_PLL_VIDEO: %x\n", CCM_ANALOG_PLL_VIDEO);
+		//Serial.printf("CCM_ANALOG_PLL_VIDEO: %x\n", CCM_ANALOG_PLL_VIDEO);
 #endif
 	}
 	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
@@ -477,6 +491,7 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 
 // Find the closest pair of FlexIO clock divides to an ideal desired divide ratio.
 // Each divide 1-8 is returned in a 4 bit nibble.  Optionally return the error too.
+FLASHMEM
 static uint8_t best_flexio_div(float ideal_div, float *error) {
 	static const uint8_t uniquediv[] = {
 		0x88, 0x87, 0x77, 0x86, 0x76, 0x85, 0x66, 0x75,
@@ -497,13 +512,14 @@ static uint8_t best_flexio_div(float ideal_div, float *error) {
 	return uniquediv[best_index];
 }
 
+FLASHMEM
 float FlexIOHandler::setClock(float frequency) {
-	Serial.printf("setClock frequency =  %.0f\n", frequency);
+	//Serial.printf("setClock frequency =  %.0f\n", frequency);
 	float error480, error508;
 	uint8_t div480 = best_flexio_div(480.0e6f / frequency, &error480);
 	uint8_t div508 = best_flexio_div(508.24e6f / frequency, &error508);
-	Serial.printf("div480 is %02X, error %.2f\n", div480, error480);
-	Serial.printf("div508 is %02X, error %.2f\n", div508, error508);
+	//Serial.printf("div480 is %02X, error %.2f\n", div480, error480);
+	//Serial.printf("div508 is %02X, error %.2f\n", div508, error508);
 	unsigned int div1, div2;
 	if (error480 <= error508) {
 		div1 = (div480 >> 4) & 15;
@@ -516,11 +532,11 @@ float FlexIOHandler::setClock(float frequency) {
 		setClockSettings(1, div1 - 1, div2 - 1);
 		frequency = 508.24e6f / (div1 * div2);
 	}
-	Serial.printf("actual frequency =  %.0f\n", frequency);
+	//Serial.printf("actual frequency =  %.0f\n", frequency);
 	return frequency;
 }
 
-
+FLASHMEM
 static float best_pll_config(float frequency, uint8_t &pll_multiply, uint32_t &pll_numerator,
                            uint32_t &pll_denominator, uint8_t &pll_divs, uint8_t &flexio_divs) {
 	// First choose the PLL's post divide.  Higher final frequency
@@ -537,53 +553,71 @@ static float best_pll_config(float frequency, uint8_t &pll_multiply, uint32_t &p
 		pll_divs = 0x44;
 	}
 	unsigned int pll_div = (pll_divs >> 4) * (pll_divs & 15);
-	Serial.printf(" pll_div = %u\n", pll_div);
+	//Serial.printf(" pll_div = %u\n", pll_div);
 
 	// Compute the "ideal" FlexIO divider which would operate the
 	// PLL exactly at the center of its usable range (650 MHz to 1.3 GHz)
 	float ideal_flexio_div = 975.0e6f / frequency / pll_div;
-	Serial.printf(" ideal_flexio_div = %.2f\n", ideal_flexio_div);
+	//Serial.printf(" ideal_flexio_div = %.2f\n", ideal_flexio_div);
 
 	// Find the closest FlexIO divider and compute the needed PLL frequency
-	unsigned char flexio_div = best_flexio_div(ideal_flexio_div, NULL);
-	unsigned int actual_flexio_div = ((flexio_div >> 4) & 15) * (flexio_div & 15);
-	Serial.printf(" actual_flexio_div = %u\n", actual_flexio_div);
+	flexio_divs = best_flexio_div(ideal_flexio_div, NULL);
+	unsigned int actual_flexio_div = ((flexio_divs >> 4) & 15) * (flexio_divs & 15);
+	//Serial.printf(" actual_flexio_div = %u\n", actual_flexio_div);
 	float pll_freq = frequency * pll_div * actual_flexio_div;
-	Serial.printf(" pll_freq = %.0f\n", pll_freq);
+	//Serial.printf(" pll_freq = %.0f\n", pll_freq);
 
 	// Compute the PLL configuration to achieve this frequency
 	float pll_mult = pll_freq / 24.0e6f;
 	if (pll_mult < 27.083f) pll_mult = 27.083f;
 	if (pll_mult > 54.167f) pll_mult = 54.167f;
-	Serial.printf(" pll_mult = %.3f\n", pll_mult);
+	//Serial.printf(" pll_mult = %.3f\n", pll_mult);
 	float pll_mult_integer, pll_mult_fraction;
 	pll_mult_fraction = modff(pll_mult, &pll_mult_integer);
 	pll_multiply = pll_mult_integer;
 	pll_denominator = 0x1FFFFFFF;
 	pll_numerator = pll_denominator * pll_mult_fraction;
-	Serial.printf(" pll_multiply = %u\n", pll_multiply);
-	Serial.printf(" pll_numerator = %08X\n", pll_numerator);
-	Serial.printf(" pll_denominator = %08X\n", pll_denominator);
+	//Serial.printf(" pll_multiply = %u\n", pll_multiply);
+	//Serial.printf(" pll_numerator = %08X\n", pll_numerator);
+	//Serial.printf(" pll_denominator = %08X\n", pll_denominator);
 
 	// Return the actual frequency using all these settings
 	frequency = 24.0e6f * ((float)pll_multiply + (float)pll_numerator / (float)pll_denominator)
 		/ (float)(pll_div * actual_flexio_div);
-	Serial.printf(" actual frequency = %.0f\n", frequency);
+	//Serial.printf(" actual frequency = %.0f\n", frequency);
 	return frequency;
 }
 
-
-
-
+FLASHMEM
 float FlexIOHandler::setClockUsingAudioPLL(float frequency) {
-	
-
-	return 0;
+	//Serial.printf("setClockUsingVideoPLL: freq = %.0f\n", frequency);
+	uint8_t pll_multiply;
+	uint32_t pll_numerator, pll_denominator;
+	uint8_t pll_divs, flexio_divs;
+	frequency = best_pll_config(frequency, pll_multiply, pll_numerator,
+		pll_denominator, pll_divs, flexio_divs);
+	// TODO: handle PLL already running?
+	uint8_t post_div_select = 0; // 0 means div by 4 (ref manual rev 3, page 1109)
+	if ((pll_divs >> 4) == 2) post_div_select = 1; // 1 means div by 2
+	CCM_ANALOG_PLL_AUDIO = CCM_ANALOG_PLL_AUDIO_DIV_SELECT(pll_multiply) |
+		CCM_ANALOG_PLL_AUDIO_POST_DIV_SELECT(post_div_select) |
+		CCM_ANALOG_PLL_AUDIO_BYPASS_CLK_SRC(0);
+	CCM_ANALOG_PLL_AUDIO_NUM = pll_numerator;
+	CCM_ANALOG_PLL_AUDIO_DENOM = pll_denominator;
+	bool msb = false, lsb = false; // 0 means div by 1 (ref manual rev 3, page 1128)
+	if ((pll_divs & 15) == 2) lsb = true; // 1 means div by 2
+	if ((pll_divs & 15) == 4) msb = lsb = true; // 3 means div by 4
+	CCM_ANALOG_MISC2_CLR = CCM_ANALOG_MISC2_AUDIO_DIV_MSB | CCM_ANALOG_MISC2_AUDIO_DIV_LSB;
+	CCM_ANALOG_MISC2_SET = (msb ? CCM_ANALOG_MISC2_AUDIO_DIV_MSB : 0) |
+		(lsb ? CCM_ANALOG_MISC2_AUDIO_DIV_LSB : 0);
+	CCM_ANALOG_PLL_AUDIO_SET = CCM_ANALOG_PLL_AUDIO_ENABLE;
+	setClockSettings(0, (flexio_divs >> 4) - 1, (flexio_divs & 15) - 1);
+	return frequency;
 }
 
+FLASHMEM
 float FlexIOHandler::setClockUsingVideoPLL(float frequency) {
-
-	Serial.printf("setClockUsingVideoPLL: freq = %.0f\n", frequency);
+	//Serial.printf("setClockUsingVideoPLL: freq = %.0f\n", frequency);
 	uint8_t pll_multiply;
 	uint32_t pll_numerator, pll_denominator;
 	uint8_t pll_divs, flexio_divs;
@@ -599,35 +633,13 @@ float FlexIOHandler::setClockUsingVideoPLL(float frequency) {
 	CCM_ANALOG_PLL_VIDEO_DENOM = pll_denominator;
 	uint8_t video_div = 0; // 0 means div by 1 (ref manual rev 3, page 1127)
 	if ((pll_divs & 15) == 2) video_div = 1; // 1 means div by 2
-	if ((pll_divs & 15) == 4) video_div = 3; // 3 means div by 5
+	if ((pll_divs & 15) == 4) video_div = 3; // 3 means div by 4
 	CCM_ANALOG_MISC2_CLR = CCM_ANALOG_MISC2_VIDEO_DIV(3);
 	CCM_ANALOG_MISC2_SET = CCM_ANALOG_MISC2_VIDEO_DIV(video_div);
 	CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_VIDEO_ENABLE;
 	setClockSettings(2, (flexio_divs >> 4) - 1, (flexio_divs & 15) - 1);
-
-  // Configure PLL5 for 58.9824 MHz (which is 921600 baud * 64)
-//  CCM_ANALOG_PLL_VIDEO = CCM_ANALOG_PLL_VIDEO_DIV_SELECT(39) |  // 24 MHz * 39
-//                         CCM_ANALOG_PLL_VIDEO_BYPASS_CLK_SRC(0) |
-//                         CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT(0); // div by 4
-//  CCM_ANALOG_PLL_VIDEO_NUM = 16777216;
-//  CCM_ANALOG_PLL_VIDEO_DENOM = 52167960;  // add 0.3216 to mult=39
-//  CCM_ANALOG_MISC2_SET = CCM_ANALOG_MISC2_VIDEO_DIV(3);  // postdiv by 4
-//  CCM_ANALOG_PLL_VIDEO_SET = CCM_ANALOG_PLL_VIDEO_ENABLE;
-  // TODO: wait for PLL lock
-
-
 	return frequency;
 }
-
-//1
-//2
-//4
-//8
-//16
-
-
-
-
 
 
 
