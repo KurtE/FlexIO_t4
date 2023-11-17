@@ -32,7 +32,7 @@
 
 
 
-class FlexSerial : public Stream, public FlexIOHandlerCallback
+class FlexSerial : public HardwareSerial, public FlexIOHandlerCallback
 {
 public:
 	enum {TX_BUFFER_SIZE=64, RX_BUFFER_SIZE=40};
@@ -50,8 +50,9 @@ public:
 	
 
 	~FlexSerial() { end(); }
-	bool begin(uint32_t baud, bool inverse_logic = false);
-	void end(void);
+	virtual void begin(uint32_t baud, uint16_t format=0);
+	virtual void end(void);
+	virtual operator bool();
 
 	virtual int available(void);
 	virtual int peek(void);
