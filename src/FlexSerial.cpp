@@ -69,19 +69,19 @@ float FlexSerial::setClockUsingVideoPLL(float frequency) {
 // FlexSerial::Begin
 //=============================================================================
 FLASHMEM
-bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
+void FlexSerial::begin(uint32_t baud, uint16_t format) {
 	init();
 	if (_txPin != -1 && _tx_pflex == nullptr ) {
 #ifdef DEBUG_FlexSerial
 		Serial.printf("FlexSerial - Failed to map TX pin %d to FlexIO\n", _txPin);
 #endif
-		return false;
+		return;
 	}
 	if (_rxPin != -1 && _rx_pflex == nullptr ) {
 #ifdef DEBUG_FlexSerial
 		Serial.printf("FlexSerial - Failed to map RX pin %d to FlexIO\n", _rxPin);
 #endif
-		return false;
+		return;
 	}
 
 	//-------------------------------------------------------------------------
@@ -102,7 +102,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim TX timer(%d)\n", _tx_timer);
 #endif
-				return false;
+				return;
 			}
 		} else {
 			_tx_timer = _tx_pflex->requestTimers();
@@ -110,7 +110,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate TX timer(%d)\n", _tx_timer);
 #endif
-				return false;
+				return;
 			}
 		}
 		if (_tx_shifter <= 7) {
@@ -118,7 +118,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim TX shifter(%d)\n", _tx_shifter);
 #endif
-				return false;
+				return;
 			}
 		} else {
 			_tx_shifter = _tx_pflex->requestShifter();
@@ -126,7 +126,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate TX shifter(%d)\n", _tx_shifter);
 #endif
-				return false;
+				return;
 			}
 		}
 
@@ -203,7 +203,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim RX timer(%d)\n", _rx_timer);
 #endif
-				return false;
+				return;
 			}
 		} else {
 			_rx_timer = _rx_pflex->requestTimers();
@@ -211,7 +211,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate RX timer(%d)\n", _rx_timer);
 #endif
-				return false;
+				return;
 			}
 		}
 		if (_rx_shifter <= 7) {
@@ -219,7 +219,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to claim RX shifter(%d)\n", _rx_shifter);
 #endif
-				return false;
+				return;
 			}
 		} else {
 			uint8_t dma_channel_to_avoid = 0xff;
@@ -230,7 +230,7 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 #ifdef DEBUG_FlexSerial
 				Serial.printf("FlexSerial - Failed to allocate RX shifter(%d)\n", _rx_shifter);
 #endif
-				return false;
+				return;
 			}
 		}
 		_rx_shifter_mask = 1 << _rx_shifter;
@@ -279,8 +279,16 @@ bool FlexSerial::begin(uint32_t baud, bool inverse_logic) {
 		Serial.printf("TIMCMP:%x %x %x %x\n", p->TIMCMP[0], p->TIMCMP[1], p->TIMCMP[2], p->TIMCMP[3]);
 #endif
 	}
+}
 
-	return true;
+FlexSerial::operator bool() {
+	if (_tx_pflex) {
+		if (_tx_timer <= 7 && _tx_shifter <= 7) return true;
+	}
+	if (_rx_pflex) {
+		if (_rx_timer <= 7 && _rx_shifter <= 7) return true;
+	}
+	return false;
 }
 
 void FlexSerial::end(void) {
@@ -294,7 +302,6 @@ void FlexSerial::end(void) {
 		_tx_pflex->removeIOHandlerCallback(this);
 		_tx_pflex = nullptr;	
 	}
-
 }
 
 
