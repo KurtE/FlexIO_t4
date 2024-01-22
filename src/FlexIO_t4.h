@@ -44,6 +44,13 @@ public:
 	virtual bool call_back (FlexIOHandler *pflex) = 0;
 };
 
+typedef struct {
+	const uint8_t  io_pin;
+	const uint8_t  flex_pin;
+	const uint8_t  io_pin_mux;
+} FLEXIO_t4_Pins_t;
+
+
 // Note: T4.x Param data does not match RM. 
 // PARAM:2200808
 class FlexIOHandler {
@@ -59,12 +66,6 @@ public:
 	// T4
 //	static const uint8_t CNT_FLEX_PINS = 14;
 #endif
-	typedef struct {
-		const uint8_t  io_pin;
-		const uint8_t  flex_pin;
-		const uint8_t  io_pin_mux;
-	} FLEXIO_Pins_t;
-
 
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
@@ -77,20 +78,11 @@ public:
 		//const uint8_t  io_pin_mux[CNT_FLEX_PINS];
 	} FLEXIO_Hardware_t;
 
-	static const FLEXIO_Pins_t flex1_pins[];
-	static const FLEXIO_Pins_t flex2_pins[];
-	static const FLEXIO_Pins_t flex3_pins[];
-
-	static const uint8_t flex1_pins_cnt;
-	static const uint8_t flex2_pins_cnt;
-	static const uint8_t flex3_pins_cnt;
-
-
 	static const FLEXIO_Hardware_t flex1_hardware;
 	static const FLEXIO_Hardware_t flex2_hardware;
 	static const FLEXIO_Hardware_t flex3_hardware;
 
-  constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list, uintptr_t pins_list, uint8_t pin_list_count)
+  constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list, uintptr_t pins_list, uintptr_t pin_list_count)
   	: _port_addr(myport), _hardware_addr(myhardware), _callback_list_addr(callback_list), _pins_addr(pins_list), _pin_list_count(pin_list_count)  {
   }
 
@@ -103,8 +95,8 @@ public:
 
 	IMXRT_FLEXIO_t & port() { return *(IMXRT_FLEXIO_t *)_port_addr; }
 	const FLEXIO_Hardware_t & hardware() { return *(const FLEXIO_Hardware_t *)_hardware_addr; }
-	const FLEXIO_Pins_t  *pins() { return (const FLEXIO_Pins_t *)_pins_addr; }
-	uint8_t pinCount() {return _pin_list_count;}
+	const FLEXIO_t4_Pins_t  *pins() { return (const FLEXIO_t4_Pins_t *)_pins_addr; }
+	uint8_t pinCount() {return *((uint8_t *)_pin_list_count);}
 	int FlexIOIndex();		// return the index of the ojbect 1:->0 2:->1 later 3:->2
 
 	uint8_t requestTimers(uint8_t cnt=1);
@@ -136,12 +128,22 @@ protected:
 	uintptr_t				_hardware_addr;
 	uintptr_t				_callback_list_addr;
   uintptr_t				_pins_addr;
-  const uint8_t		_pin_list_count;
+  uintptr_t				_pin_list_count;
 
 	uint8_t         _used_timers = 0;
 	uint8_t         _used_shifters = 0;
 	bool						_irq_initialized = false;
   
 };
+
+extern "C" {
+	extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio1[];
+	extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[];
+	extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio3[];
+
+	extern const uint8_t flexio_t4_pins_cnt_flexio1;
+	extern const uint8_t flexio_t4_pins_cnt_flexio2;
+	extern const uint8_t flexio_t4_pins_cnt_flexio3;
+}
 
 #endif //_FLEX_IO_T4_H_

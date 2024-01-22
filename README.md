@@ -141,8 +141,52 @@ For example with the FlexSerial object, the Baud divider is one byte so without 
 So the default of 30000000 and max divide by 256 = min Baud of 117,187.5/ 2 = 58,594
 Now setting the pred to 7 your minimum baud reduces to: 29296.875 / 2 about 14,648
 
-Future Updates
+Custom Boards Overwrite Pin mapping table
 ==============
+
+If you are using a custom board which does not map which IO pin, maps to each FlexIO object, there is
+a new mechanism that allows you to overwrite the Pin mapping table.  These tables are defined in 
+FlexIO_t4.cpp and are marked with a weak attribute.  So if your sketch or potentially a variant, 
+implements a new table with the same name, it can replace these table(s)
+
+Example: a custom board which has the Flash size of a Teensy Micromod has several different IO pins.
+If you are developing a variant, you may not be able to include a header file from a library and as
+such you may need to duplicate the structure.
+
+Example to update the FlexIO2 pins:
+````
+typedef struct {
+    const uint8_t  io_pin;
+    const uint8_t  flex_pin;
+    const uint8_t  io_pin_mux;
+} FLEXIO_t4_Pins_t;
+
+extern "C" {
+    extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio1[];
+    extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[];
+    extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio3[];
+
+    extern const uint8_t flexio_t4_pins_cnt_flexio1;
+    extern const uint8_t flexio_t4_pins_cnt_flexio2;
+    extern const uint8_t flexio_t4_pins_cnt_flexio3;
+}
+
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[] = {
+    {6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, 
+    {32, 12, 0x14}, {40, 4, 0x14}, {41, 5, 0x14}, {42, 6, 0x14}, {43, 7, 0x14}, {44, 8, 0x14}, {45, 9, 0x14},
+    // added
+    {46, 12, 0x14}, {47, 14, 0x14}, {48, 15, 0x14}, {63, 13, 0x14},
+    {49, 18, 0x14}, {50, 19, 0x14}, {51, 20, 0x14}, {52, 21, 0x14}, {53, 22, 0x14}, {54, 23, 0x14}, {55, 24, 0x14}, {56, 25, 0x14}, 
+    {57, 26, 0x14}, {58, 27, 0x14}, {59, 28, 0x14}, {60, 29, 0x14}, {61, 30, 0x14}, {62, 31, 0x14}
+};
+extern const uint8_t flexio_t4_pins_cnt_flexio2 = sizeof(flexio_t4_pins_flexio2) / sizeof(flexio_t4_pins_flexio2[0]);
+```
+
+Note the names are hard coded and you will likely need to also update the count of pins variable as well as you can see above.
+
+
+
+
 
 
 Again WIP

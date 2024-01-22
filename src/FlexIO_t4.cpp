@@ -49,9 +49,9 @@ FlexIOHandlerCallback *flex3_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nul
 // T4.1 board
 //-----------------------------------------------------------------------------
 #if defined(ARDUINO_TEENSY41)
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex1_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio1[]  __attribute__((weak))= {
 	{2, 4, 0x14}, {3, 5, 0x14}, {4, 6, 0x14}, {5, 8, 0x14}, {33, 7, 0x14}, {49, 13, 0x14}, {50, 14, 0x14}, {52, 12, 0x14},{54, 15, 0x14}};
-extern const uint8_t FlexIOHandler::flex1_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex1_pins) / sizeof(FlexIOHandler::flex1_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio1 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio1) / sizeof(flexio_t4_pins_flexio1[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
@@ -64,11 +64,11 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 //	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex2_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[]  __attribute__((weak))= {
 	{6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, {32, 12, 0x14}, 
 	{34, 29, 0x14}, {35, 28, 0x14}, {36, 18, 0x14}, {37, 19, 0x14}
 };
-extern const uint8_t FlexIOHandler::flex2_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex2_pins) / sizeof(FlexIOHandler::flex2_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio2 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio2) / sizeof(flexio_t4_pins_flexio2[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
@@ -81,12 +81,12 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 //	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex3_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio3[]  __attribute__((weak))= {
 	{7, 17, 0x19}, {8, 16, 0x19}, {14, 2, 0x19}, {15, 3, 0x19}, {16, 7, 0x19}, {17, 6, 0x19}, {18, 1, 0x19}, {19, 0, 0x19}, {20, 10, 0x19},
 	{21, 11, 0x19}, {22, 8, 0x19}, {23, 9, 0x19}, {26, 14, 0x19}, {27, 15, 0x19},
 	{34, 29, 0x19}, {35, 28, 0x19}, {36, 18, 0x19}, {37, 19, 0x19}, {38, 12, 0x19}, {39, 13, 0x19}, {40, 4, 0x19}, {41, 5, 0x19}
 };
-extern const uint8_t FlexIOHandler::flex3_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex3_pins) / sizeof(FlexIOHandler::flex3_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio3 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio3) / sizeof(flexio_t4_pins_flexio3[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
@@ -103,9 +103,9 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 // T4 MicroMod
 //-----------------------------------------------------------------------------
 #elif defined(ARDUINO_TEENSY_MICROMOD)
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex1_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio1[]  __attribute__((weak))= {
 	{2, 4, 0x14}, {3, 5, 0x14}, {4, 6, 0x14}, {5, 8, 0x14}, {33, 7, 0x14}};
-extern const uint8_t FlexIOHandler::flex1_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex1_pins) / sizeof(FlexIOHandler::flex1_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio1 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio1) / sizeof(flexio_t4_pins_flexio1[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
@@ -118,11 +118,11 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 //	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex2_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[]  __attribute__((weak))= {
 	{6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, {32, 12, 0x14},
 	{40, 4, 0x14}, {41, 5, 0x14}, {42, 6, 0x14}, {43, 7, 0x14}, {44, 8, 0x14}, {45, 9, 0x14}
 };
-extern const uint8_t FlexIOHandler::flex2_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex2_pins) / sizeof(FlexIOHandler::flex2_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio2 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio2) / sizeof(flexio_t4_pins_flexio2[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
@@ -135,11 +135,11 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 //	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
 };
 
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex3_pins[]  __attribute__((weak)) = {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio3[]  __attribute__((weak)) = {
 	{7, 17, 0x19}, {8, 16, 0x19}, {14, 2, 0x19}, {15, 3, 0x19}, {16, 7, 0x19}, {17, 6, 0x19}, {18, 1, 0x19}, {19, 0, 0x19}, {20, 10, 0x19},
 	{21, 11, 0x19}, {22, 8, 0x19}, {23, 9, 0x19}, {26, 14, 0x19}, {27, 15, 0x19}
 };
-extern const uint8_t FlexIOHandler::flex3_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex3_pins) / sizeof(FlexIOHandler::flex3_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio3 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio3) / sizeof(flexio_t4_pins_flexio3[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
@@ -156,9 +156,9 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 // T4 board
 //-----------------------------------------------------------------------------
 #else
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex1_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio1[]  __attribute__((weak))= {
 	{2, 4, 0x14}, {3, 5, 0x14}, {4, 6, 0x14}, {5, 8, 0x14}, {33, 7, 0x14}};
-extern const uint8_t FlexIOHandler::flex1_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex1_pins) / sizeof(FlexIOHandler::flex1_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio1 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio1) / sizeof(flexio_t4_pins_flexio1[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
@@ -172,9 +172,9 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 };
 
 
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex2_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[]  __attribute__((weak))= {
 	{6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, {32, 12, 0x14}};
-extern const uint8_t FlexIOHandler::flex2_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex2_pins) / sizeof(FlexIOHandler::flex2_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio2 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio2) / sizeof(flexio_t4_pins_flexio2[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
@@ -188,11 +188,11 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 };
 
 
-extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex3_pins[]  __attribute__((weak))= {
+extern const FLEXIO_t4_Pins_t flexio_t4_pins_flexio3[]  __attribute__((weak))= {
 	{7, 17, 0x19}, {8, 16, 0x19}, {14, 2, 0x19}, {15, 3, 0x19}, {16, 7, 0x19}, {17, 6, 0x19}, {18, 1, 0x19}, {19, 0, 0x19}, {20, 10, 0x19},
 	{21, 11, 0x19}, {22, 8, 0x19}, {23, 9, 0x19}, {26, 14, 0x19}, {27, 15, 0x19}
 };
-extern const uint8_t FlexIOHandler::flex3_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex3_pins) / sizeof(FlexIOHandler::flex3_pins[0]);
+extern const uint8_t flexio_t4_pins_cnt_flexio3 __attribute__((weak)) = sizeof(flexio_t4_pins_flexio3) / sizeof(flexio_t4_pins_flexio3[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
@@ -207,11 +207,11 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 #endif
 
 static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks, 
-							(uintptr_t)FlexIOHandler::flex1_pins, FlexIOHandler::flex1_pins_cnt);
+							(uintptr_t)flexio_t4_pins_flexio1, (uintptr_t)&flexio_t4_pins_cnt_flexio1);
 static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks, 
-							(uintptr_t)FlexIOHandler::flex2_pins, FlexIOHandler::flex2_pins_cnt);
+							(uintptr_t)flexio_t4_pins_flexio2, (uintptr_t)&flexio_t4_pins_cnt_flexio2);
 static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks, 
-							(uintptr_t)FlexIOHandler::flex3_pins, FlexIOHandler::flex3_pins_cnt);
+							(uintptr_t)flexio_t4_pins_flexio3, (uintptr_t)&flexio_t4_pins_cnt_flexio3);
 
 FlexIOHandler *FlexIOHandler::flexIOHandler_list[] = {&flexIO1, &flexIO2, &flexIO3};
 
@@ -283,8 +283,9 @@ uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
 {
 
   	// Now lets walk through all of the pins associated with this object. 
-    const FLEXIO_Pins_t *pin_list = pins();
-	for (uint8_t i = 0; i < _pin_list_count; i++ ) {
+  	uint8_t pin_count = pinCount();
+    const FLEXIO_t4_Pins_t *pin_list = pins();
+	for (uint8_t i = 0; i < pin_count; i++ ) {
   		if (pin_list[i].io_pin == pin) {
 #ifdef DEBUG_FlexIO
 			Serial.println("Enable flexio clock");
@@ -301,8 +302,9 @@ uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
 // Set an IO pin into Flex Mode
 //-----------------------------------------------------------------------------
 bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
-    const FLEXIO_Pins_t *pin_list = pins();
-	for (uint8_t i = 0; i < _pin_list_count; i++ ) {
+    const FLEXIO_t4_Pins_t *pin_list = pins();
+  	uint8_t pin_count = pinCount();
+	for (uint8_t i = 0; i < pin_count; i++ ) {
   		if (pin_list[i].io_pin == pin) {
 			  *(portConfigRegister(pin)) = pin_list[i].io_pin_mux;
 			  return true;
