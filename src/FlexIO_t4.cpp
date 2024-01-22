@@ -49,16 +49,26 @@ FlexIOHandlerCallback *flex3_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nul
 // T4.1 board
 //-----------------------------------------------------------------------------
 #if defined(ARDUINO_TEENSY41)
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex1_pins[]  __attribute__((weak))= {
+	{2, 4, 0x14}, {3, 5, 0x14}, {4, 6, 0x14}, {5, 8, 0x14}, {33, 7, 0x14}, {49, 13, 0x14}, {50, 14, 0x14}, {52, 12, 0x14},{54, 15, 0x14}};
+extern const uint8_t FlexIOHandler::flex1_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex1_pins) / sizeof(FlexIOHandler::flex1_pins[0]);
+
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	2,       3,    4,    5,  33,    49,   50,   52,   54, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,     13,   14,   12,   15, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	2,       3,    4,    5,  33,    49,   50,   52,   54, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	4,       5,    6,    8,  7,     13,   14,   12,   15, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
+
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex2_pins[]  __attribute__((weak))= {
+	{6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, {32, 12, 0x14}, 
+	{34, 29, 0x14}, {35, 28, 0x14}, {36, 18, 0x14}, {37, 19, 0x14}
+};
+extern const uint8_t FlexIOHandler::flex2_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex2_pins) / sizeof(FlexIOHandler::flex2_pins[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
@@ -66,10 +76,17 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
+
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex3_pins[]  __attribute__((weak))= {
+	{7, 17, 0x19}, {8, 16, 0x19}, {14, 2, 0x19}, {15, 3, 0x19}, {16, 7, 0x19}, {17, 6, 0x19}, {18, 1, 0x19}, {19, 0, 0x19}, {20, 10, 0x19},
+	{21, 11, 0x19}, {22, 8, 0x19}, {23, 9, 0x19}, {26, 14, 0x19}, {27, 15, 0x19},
+	{34, 29, 0x19}, {35, 28, 0x19}, {36, 18, 0x19}, {37, 19, 0x19}, {38, 12, 0x19}, {39, 13, 0x19}, {40, 4, 0x19}, {41, 5, 0x19}
+};
+extern const uint8_t FlexIOHandler::flex3_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex3_pins) / sizeof(FlexIOHandler::flex3_pins[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
@@ -77,25 +94,35 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	&IRQHandler_FlexIO3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41, 
-	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5, 
-	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 
+//	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41, 
+//	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5, 
+//	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 
 };
 
 //-----------------------------------------------------------------------------
 // T4 MicroMod
 //-----------------------------------------------------------------------------
 #elif defined(ARDUINO_TEENSY_MICROMOD)
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex1_pins[]  __attribute__((weak))= {
+	{2, 4, 0x14}, {3, 5, 0x14}, {4, 6, 0x14}, {5, 8, 0x14}, {33, 7, 0x14}};
+extern const uint8_t FlexIOHandler::flex1_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex1_pins) / sizeof(FlexIOHandler::flex1_pins[0]);
+
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
+
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex2_pins[]  __attribute__((weak))= {
+	{6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, {32, 12, 0x14},
+	{40, 4, 0x14}, {41, 5, 0x14}, {42, 6, 0x14}, {43, 7, 0x14}, {44, 8, 0x14}, {45, 9, 0x14}
+};
+extern const uint8_t FlexIOHandler::flex2_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex2_pins) / sizeof(FlexIOHandler::flex2_pins[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
@@ -103,10 +130,16 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32,   40,   41,   42,   43,   44,   45,
-	10,     17,   16,   11,  0,      2,    1,    3,   12,    4,    5,    6,    7,    8,    9,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
+//	6,       7,    8,    9,  10,    11,   12,   13,   32,   40,   41,   42,   43,   44,   45,
+//	10,     17,   16,   11,  0,      2,    1,    3,   12,    4,    5,    6,    7,    8,    9,
+//	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
 };
+
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex3_pins[]  __attribute__((weak)) = {
+	{7, 17, 0x19}, {8, 16, 0x19}, {14, 2, 0x19}, {15, 3, 0x19}, {16, 7, 0x19}, {17, 6, 0x19}, {18, 1, 0x19}, {19, 0, 0x19}, {20, 10, 0x19},
+	{21, 11, 0x19}, {22, 8, 0x19}, {23, 9, 0x19}, {26, 14, 0x19}, {27, 15, 0x19}
+};
+extern const uint8_t FlexIOHandler::flex3_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex3_pins) / sizeof(FlexIOHandler::flex3_pins[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
@@ -114,25 +147,34 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	&IRQHandler_FlexIO3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27, 0xff,   
-	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15, 0xff,    
-	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0xff,
+//	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27, 0xff,   
+//	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15, 0xff,    
+//	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0xff,
 };
 
 //-----------------------------------------------------------------------------
 // T4 board
 //-----------------------------------------------------------------------------
 #else
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex1_pins[]  __attribute__((weak))= {
+	{2, 4, 0x14}, {3, 5, 0x14}, {4, 6, 0x14}, {5, 8, 0x14}, {33, 7, 0x14}};
+extern const uint8_t FlexIOHandler::flex1_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex1_pins) / sizeof(FlexIOHandler::flex1_pins[0]);
+
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
 	IRQ_FLEXIO1, 
 	&IRQHandler_FlexIO1,
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
+
+
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex2_pins[]  __attribute__((weak))= {
+	{6, 10, 0x14}, {7, 17, 0x14}, {8, 16, 0x14}, {9, 11, 0x14}, {10, 0, 0x14}, {11, 2, 0x14}, {12, 1, 0x14}, {13, 3, 0x14}, {32, 12, 0x14}};
+extern const uint8_t FlexIOHandler::flex2_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex2_pins) / sizeof(FlexIOHandler::flex2_pins[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
@@ -140,10 +182,17 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	&IRQHandler_FlexIO2,
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32, 0xff, 0xff, 0xff, 0xff, 0xff,
-	10,     17,   16,   11,  0,      2,    1,    3,   12, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	6,       7,    8,    9,  10,    11,   12,   13,   32, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	10,     17,   16,   11,  0,      2,    1,    3,   12, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
+
+
+extern const FlexIOHandler::FLEXIO_Pins_t FlexIOHandler::flex3_pins[]  __attribute__((weak))= {
+	{7, 17, 0x19}, {8, 16, 0x19}, {14, 2, 0x19}, {15, 3, 0x19}, {16, 7, 0x19}, {17, 6, 0x19}, {18, 1, 0x19}, {19, 0, 0x19}, {20, 10, 0x19},
+	{21, 11, 0x19}, {22, 8, 0x19}, {23, 9, 0x19}, {26, 14, 0x19}, {27, 15, 0x19}
+};
+extern const uint8_t FlexIOHandler::flex3_pins_cnt __attribute__((weak)) = sizeof(FlexIOHandler::flex3_pins) / sizeof(FlexIOHandler::flex3_pins[0]);
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
@@ -151,15 +200,18 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	&IRQHandler_FlexIO3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   
-	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
-	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19,
+//	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   
+//	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
+//	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19,
 };
 #endif
 
-static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks);
-static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks);
-static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks);
+static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks, 
+							(uintptr_t)FlexIOHandler::flex1_pins, FlexIOHandler::flex1_pins_cnt);
+static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks, 
+							(uintptr_t)FlexIOHandler::flex2_pins, FlexIOHandler::flex2_pins_cnt);
+static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks, 
+							(uintptr_t)FlexIOHandler::flex3_pins, FlexIOHandler::flex3_pins_cnt);
 
 FlexIOHandler *FlexIOHandler::flexIOHandler_list[] = {&flexIO1, &flexIO2, &flexIO3};
 
@@ -231,14 +283,15 @@ uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
 {
 
   	// Now lets walk through all of the pins associated with this object. 
-	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
-  		if (hardware().io_pin[i] == pin) {
+    const FLEXIO_Pins_t *pin_list = pins();
+	for (uint8_t i = 0; i < _pin_list_count; i++ ) {
+  		if (pin_list[i].io_pin == pin) {
 #ifdef DEBUG_FlexIO
 			Serial.println("Enable flexio clock");
 #endif
 			hardware().clock_gate_register |= hardware().clock_gate_mask;
 
-			return hardware().flex_pin[i];
+			return pin_list[i].flex_pin;
 		}
 	}
 	return 0xff;
@@ -248,9 +301,10 @@ uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
 // Set an IO pin into Flex Mode
 //-----------------------------------------------------------------------------
 bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
-	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
-		if (hardware().io_pin[i] == pin) {
-			  *(portConfigRegister(pin)) = hardware().io_pin_mux[i];
+    const FLEXIO_Pins_t *pin_list = pins();
+	for (uint8_t i = 0; i < _pin_list_count; i++ ) {
+  		if (pin_list[i].io_pin == pin) {
+			  *(portConfigRegister(pin)) = pin_list[i].io_pin_mux;
 			  return true;
 		}
 	}
@@ -404,7 +458,7 @@ uint32_t FlexIOHandler::computeClockRate()  {
 	uint8_t clk_sel;
 	uint8_t clk_pred;
 	uint8_t clk_podf;
-	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
+	if ((IMXRT_FLEXIO_t *)_port_addr == &IMXRT_FLEXIO1_S) {
 		// FlexIO1... 
 		clk_sel = (CCM_CDCDR >> 7) & 0x3;
 		clk_pred = (CCM_CDCDR >> 12) & 0x7;
@@ -442,8 +496,8 @@ uint32_t FlexIOHandler::computeClockRate()  {
 FLASHMEM
 bool FlexIOHandler::usesSameClock(const FlexIOHandler *other)
 {
-	const bool this_is_flexio1 = ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S);
-	const bool other_is_flexio1 = ((IMXRT_FLEXIO_t *)(other->port_addr) == &IMXRT_FLEXIO1_S);
+	const bool this_is_flexio1 = ((IMXRT_FLEXIO_t *)_port_addr == &IMXRT_FLEXIO1_S);
+	const bool other_is_flexio1 = ((IMXRT_FLEXIO_t *)(other->_port_addr) == &IMXRT_FLEXIO1_S);
 	if (this_is_flexio1 && other_is_flexio1) return true;
 	if (!this_is_flexio1 && !other_is_flexio1) return true; // flexio2 & flexio3 share clock
 	return false;
@@ -464,7 +518,7 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 		//Serial.printf("CCM_ANALOG_PLL_VIDEO: %x\n", CCM_ANALOG_PLL_VIDEO);
 #endif
 	}
-	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
+	if ((IMXRT_FLEXIO_t *)_port_addr == &IMXRT_FLEXIO1_S) {
 		// FlexIO1... 
 		// need to turn clock off...
 		hardware().clock_gate_register &= ~hardware().clock_gate_mask;
