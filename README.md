@@ -2,7 +2,7 @@ Overview and Warning:
 =====
 
 This library was originally created to experiement with the FlexIO capabilities of the new Teensy 4 board and
-will also support the Teensy 4.1
+also support the Teensy 4.1 and the Sparkfun Teensy Micromod.
 
 
 This program is free software: you can redistribute it and/or modify it 
@@ -22,7 +22,7 @@ There are more discussions about FlexIO up on the PJRC forum, including:
 https://forum.pjrc.com/threads/58228-T4-FlexIO-Looking-back-at-my-T4-beta-testing-library-FlexIO_t4
 
 
-FlexIO pins on T4 and T4.1
+FlexIO pins on T4 and T4.1 and Teensy Micromod
 ==========================
 
 The Teensy 4 (ARDUINO_TEENSY40) has the following Flex IO pins defined:
@@ -55,7 +55,7 @@ FlexIO 3 - Note Flex IO 3 does not have DMA support
 ```
 Ranges: 0-3,6-11,14-17
 
-The Teensy 4.1 (ARDUINO_TEENSY41) Will have additional IO pins.  
+The Teensy 4.1 (ARDUINO_TEENSY41) has additional IO pins.  
 -------------
 **FlexIO 1** - The three rows are: Teensy pin, Flex IO pin, and MUX setting for that pin:
 ```
@@ -107,6 +107,14 @@ Ranges 0-12, 16-17
     0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0xff,
 ```
 Ranges: 0-3,6-11,14-17
+
+
+NOTE:
+=====
+This version of the library removed the need to have different tables for each version of the
+Teensy that is built using the IMXRT1060.  Instead the tables for each FlexIO object is built
+with the complete list of possible FlexIO pins, and then maps the Teensy pin to the IMXRT
+pin by using the Pin Mux address in the pin table associated with that actual teensy.
 
 Library details
 ===============

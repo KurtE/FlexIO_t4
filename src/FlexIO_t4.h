@@ -43,6 +43,12 @@ public:
 	virtual bool call_back (FlexIOHandler *pflex) = 0;
 };
 
+typedef struct {
+    volatile uint32_t *mux;  // we map IO pin to MUX and then compare
+	const uint8_t  flex_pin;
+} FLEXIO_t4_Pins_t;
+
+
 // Note: T4.x Param data does not match RM. 
 // PARAM:2200808
 class FlexIOHandler {
@@ -65,18 +71,16 @@ public:
 		const uint32_t clock_gate_mask;
 		const IRQ_NUMBER_t  flex_irq;
 		void    (*flex_isr)();
+		const uint8_t  io_pin_mux;  // The pin mux is the same for all of the pins
 		const uint8_t  shifters_dma_channel[CNT_SHIFTERS];
-		const uint8_t  io_pin[CNT_FLEX_PINS];
-		const uint8_t  flex_pin[CNT_FLEX_PINS];
-		const uint8_t  io_pin_mux[CNT_FLEX_PINS];
 	} FLEXIO_Hardware_t;
 
 	static const FLEXIO_Hardware_t flex1_hardware;
 	static const FLEXIO_Hardware_t flex2_hardware;
 	static const FLEXIO_Hardware_t flex3_hardware;
 
-  constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list)
-  	: port_addr(myport), hardware_addr(myhardware), _callback_list_addr(callback_list) {
+  constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list, uintptr_t pins_list)
+  	: _port_addr(myport), _hardware_addr(myhardware), _callback_list_addr(callback_list), _pins_addr(pins_list)  {
   }
 
   	// A static one that can map across all FlexIO controller
@@ -86,8 +90,10 @@ public:
     // A simple one that maps within a controller
   	uint8_t mapIOPinToFlexPin(uint8_t);
 
-	IMXRT_FLEXIO_t & port() { return *(IMXRT_FLEXIO_t *)port_addr; }
-	const FLEXIO_Hardware_t & hardware() { return *(const FLEXIO_Hardware_t *)hardware_addr; }
+	IMXRT_FLEXIO_t & port() { return *(IMXRT_FLEXIO_t *)_port_addr; }
+	const FLEXIO_Hardware_t & hardware() { return *(const FLEXIO_Hardware_t *)_hardware_addr; }
+	const FLEXIO_t4_Pins_t  *pins() { return (const FLEXIO_t4_Pins_t *)_pins_addr; }
+	//uint8_t pinCount() {return *((uint8_t *)_pin_list_count);}
 	int FlexIOIndex();		// return the index of the ojbect 1:->0 2:->1 later 3:->2
 
 	uint8_t requestTimers(uint8_t cnt=1);
@@ -115,9 +121,10 @@ public:
 	void IRQHandler(void);
 
 protected: 
-	uintptr_t 		port_addr;
-	uintptr_t		 hardware_addr;
-	uintptr_t		_callback_list_addr;
+	uintptr_t 			_port_addr;
+	uintptr_t				_hardware_addr;
+	uintptr_t				_callback_list_addr;
+  	uintptr_t				_pins_addr;
 	uint8_t         _used_timers = 0;
 	uint8_t         _used_shifters = 0;
 	bool			_irq_initialized = false;

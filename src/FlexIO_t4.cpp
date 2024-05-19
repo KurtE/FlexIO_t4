@@ -46,120 +46,92 @@ FlexIOHandlerCallback *flex2_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nul
 FlexIOHandlerCallback *flex3_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
 //-----------------------------------------------------------------------------
-// T4.1 board
+// Board independant
 //-----------------------------------------------------------------------------
-#if defined(ARDUINO_TEENSY41)
+
+// FlexIO1
+static  const FLEXIO_t4_Pins_t flexio_t4_pins_flexio1[] PROGMEM = {
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_00, 0}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_01, 1},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_02, 2}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_03, 3},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_04, 4}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_05, 5},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_06, 6}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_07, 7},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_08, 8}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_09, 9},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_10, 10}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_11, 11},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_26, 12}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_27, 13},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_28, 14}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_29, 15},
+	{nullptr, 0}
+};
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
-	IRQ_FLEXIO1, 
-	&IRQHandler_FlexIO1,
+	IRQ_FLEXIO1, &IRQHandler_FlexIO1,
+	0x14, // The Mux setting for this FlexIO
 	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	2,       3,    4,    5,  33,    49,   50,   52,   54, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,     13,   14,   12,   15, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
+
+// FlexIO2
+static  const FLEXIO_t4_Pins_t flexio_t4_pins_flexio2[] PROGMEM = {
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00, 0}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_01, 1},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_02, 2}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03, 3},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_04, 4}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_05, 5},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_06, 6}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_07, 7},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_08, 8}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_09, 9},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_10, 10}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_11, 11},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_12, 12}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_13, 13},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_14, 14}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_15, 15},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00, 16}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01, 17},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_02, 18}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_03, 19},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_04, 20}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_05, 21},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_06, 22}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_07, 23},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_08, 24}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_09, 25},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_10, 26}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_11, 27},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_12, 28}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_13, 29},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_14, 30}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_15, 31}
 };
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
-	IRQ_FLEXIO2, 
-	&IRQHandler_FlexIO2,
+	IRQ_FLEXIO2, &IRQHandler_FlexIO2,
+	0x14, // The Mux setting for this FlexIO
 	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32,   34,   35,   36,   37, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	10,     17,   16,   11,  0,      2,    1,    3,   12,   29,   28,   18,   19, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff  // No DMA Sources? 
+};
+
+
+// FlexIO3
+static  const FLEXIO_t4_Pins_t flexio_t4_pins_flexio3[] PROGMEM = {
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_00, 0}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_01, 1},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_02, 2}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_03, 3},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_04, 4}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_05, 5},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_06, 6}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_07, 7},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_08, 8}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_09, 9},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_10, 10}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_11, 11},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_12, 12}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_13, 13},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_14, 14}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_15, 15},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00, 16}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01, 17},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_02, 18}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_03, 19},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_04, 20}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_05, 21},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_06, 22}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_07, 23},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_08, 24}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_09, 25},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_10, 26}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_11, 27},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_12, 28}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_13, 29},
+	{&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_14, 30}, {&IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_15, 31}
 };
 
 const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
 	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
-	IRQ_FLEXIO3, 
-	&IRQHandler_FlexIO3,
+	IRQ_FLEXIO3, &IRQHandler_FlexIO3,
+	0x19, // mux setting for all of the pins
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
 	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   34,   35,   36,   37,   38,   39,   40,   41, 
-	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,   29,   28,   18,   19,   12,   13,    4,    5, 
-	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 
 };
 
-//-----------------------------------------------------------------------------
-// T4 MicroMod
-//-----------------------------------------------------------------------------
-#elif defined(ARDUINO_TEENSY_MICROMOD)
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
-	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
-	IRQ_FLEXIO1, 
-	&IRQHandler_FlexIO1,
-	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-};
-
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
-	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
-	IRQ_FLEXIO2, 
-	&IRQHandler_FlexIO2,
-	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32,   40,   41,   42,   43,   44,   45,
-	10,     17,   16,   11,  0,      2,    1,    3,   12,    4,    5,    6,    7,    8,    9,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
-};
-
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
-	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
-	IRQ_FLEXIO3, 
-	&IRQHandler_FlexIO3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27, 0xff,   
-	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15, 0xff,    
-	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0xff,
-};
-
-//-----------------------------------------------------------------------------
-// T4 board
-//-----------------------------------------------------------------------------
-#else
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
-	CCM_CCGR5, CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
-	IRQ_FLEXIO1, 
-	&IRQHandler_FlexIO1,
-	DMAMUX_SOURCE_FLEXIO1_REQUEST0, DMAMUX_SOURCE_FLEXIO1_REQUEST1, DMAMUX_SOURCE_FLEXIO1_REQUEST2, DMAMUX_SOURCE_FLEXIO1_REQUEST3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	2,       3,    4,    5,  33,  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	4,       5,    6,    8,  7,   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-};
-
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
-	CCM_CCGR3, CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),
-	IRQ_FLEXIO2, 
-	&IRQHandler_FlexIO2,
-	DMAMUX_SOURCE_FLEXIO2_REQUEST0, DMAMUX_SOURCE_FLEXIO2_REQUEST1, DMAMUX_SOURCE_FLEXIO2_REQUEST2, DMAMUX_SOURCE_FLEXIO2_REQUEST3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	6,       7,    8,    9,  10,    11,   12,   13,   32, 0xff, 0xff, 0xff, 0xff, 0xff,
-	10,     17,   16,   11,  0,      2,    1,    3,   12, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff,
-};
-
-const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex3_hardware = {
-	CCM_CCGR7, CCM_CCGR7_FLEXIO3(CCM_CCGR_ON),
-	IRQ_FLEXIO3, 
-	&IRQHandler_FlexIO3,
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	0xff, 0xff, 0xff, 0xff,  // No DMA Sources? 
-	7,       8,   14,   15,   16,   17,   18,   19,   20,  21,    22,   23,   26,   27,   
-	17,     16,    2,    3,    7,    6,    1,    0,   10,   11,    8,    9,   14,   15,    
-	0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19,
-};
-#endif
-
-static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks);
-static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks);
-static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks);
+static FlexIOHandler flexIO1((uintptr_t)&IMXRT_FLEXIO1_S, (uintptr_t)&FlexIOHandler::flex1_hardware, (uintptr_t)flex1_Handler_callbacks, 
+							(uintptr_t)flexio_t4_pins_flexio1);
+static FlexIOHandler flexIO2((uintptr_t)&IMXRT_FLEXIO2_S, (uintptr_t)&FlexIOHandler::flex2_hardware, (uintptr_t)flex2_Handler_callbacks, 
+							(uintptr_t)flexio_t4_pins_flexio2);
+static FlexIOHandler flexIO3((uintptr_t)&IMXRT_FLEXIO3_S, (uintptr_t)&FlexIOHandler::flex3_hardware, (uintptr_t)flex3_Handler_callbacks, 
+							(uintptr_t)flexio_t4_pins_flexio3);
 
 FlexIOHandler *FlexIOHandler::flexIOHandler_list[] = {&flexIO1, &flexIO2, &flexIO3};
 
@@ -229,16 +201,24 @@ FlexIOHandler *FlexIOHandler::mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex
 //-----------------------------------------------------------------------------
 uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
 {
+	// Map the pin to its port config register which we will use to
+	// look it up in the table of pins
+    if (pin >= CORE_NUM_DIGITAL) return 0xff; // pin is out of range.
+
+    volatile uint32_t *pin_mux = portConfigRegister(pin);
 
   	// Now lets walk through all of the pins associated with this object. 
-	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
-  		if (hardware().io_pin[i] == pin) {
+    const FLEXIO_t4_Pins_t *pin_list = pins();
+
+	for (uint8_t i = 0; i < 32; i++ ) {
+		if (pin_list[i].mux == nullptr) break; // short liset (flexio1)
+  		if (pin_list[i].mux == pin_mux) {
 #ifdef DEBUG_FlexIO
 			Serial.println("Enable flexio clock");
 #endif
 			hardware().clock_gate_register |= hardware().clock_gate_mask;
 
-			return hardware().flex_pin[i];
+			return pin_list[i].flex_pin;
 		}
 	}
 	return 0xff;
@@ -248,9 +228,18 @@ uint8_t FlexIOHandler::mapIOPinToFlexPin(uint8_t pin)
 // Set an IO pin into Flex Mode
 //-----------------------------------------------------------------------------
 bool FlexIOHandler::setIOPinToFlexMode(uint8_t pin) {
-	for (uint8_t i = 0; i < CNT_FLEX_PINS; i++ ) {
-		if (hardware().io_pin[i] == pin) {
-			  *(portConfigRegister(pin)) = hardware().io_pin_mux[i];
+	// Map the pin to its port config register which we will use to
+	// look it up in the table of pins
+    if (pin >= CORE_NUM_DIGITAL) return false; // pin is out of range.
+    volatile uint32_t *pin_mux = portConfigRegister(pin);
+
+  	// Now lets walk through all of the pins associated with this object. 
+    const FLEXIO_t4_Pins_t *pin_list = pins();
+
+	for (uint8_t i = 0; i < 32; i++ ) {
+		if (pin_list[i].mux == nullptr) break; // short liset (flexio1)
+  		if (pin_list[i].mux == pin_mux) {
+			  *(portConfigRegister(pin)) = hardware().io_pin_mux;
 			  return true;
 		}
 	}
@@ -404,7 +393,7 @@ uint32_t FlexIOHandler::computeClockRate()  {
 	uint8_t clk_sel;
 	uint8_t clk_pred;
 	uint8_t clk_podf;
-	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
+	if ((IMXRT_FLEXIO_t *)_port_addr == &IMXRT_FLEXIO1_S) {
 		// FlexIO1... 
 		clk_sel = (CCM_CDCDR >> 7) & 0x3;
 		clk_pred = (CCM_CDCDR >> 12) & 0x7;
@@ -442,8 +431,8 @@ uint32_t FlexIOHandler::computeClockRate()  {
 FLASHMEM
 bool FlexIOHandler::usesSameClock(const FlexIOHandler *other)
 {
-	const bool this_is_flexio1 = ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S);
-	const bool other_is_flexio1 = ((IMXRT_FLEXIO_t *)(other->port_addr) == &IMXRT_FLEXIO1_S);
+	const bool this_is_flexio1 = ((IMXRT_FLEXIO_t *)_port_addr == &IMXRT_FLEXIO1_S);
+	const bool other_is_flexio1 = ((IMXRT_FLEXIO_t *)(other->_port_addr) == &IMXRT_FLEXIO1_S);
 	if (this_is_flexio1 && other_is_flexio1) return true;
 	if (!this_is_flexio1 && !other_is_flexio1) return true; // flexio2 & flexio3 share clock
 	return false;
@@ -464,7 +453,7 @@ void FlexIOHandler::setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t 
 		//Serial.printf("CCM_ANALOG_PLL_VIDEO: %x\n", CCM_ANALOG_PLL_VIDEO);
 #endif
 	}
-	if ((IMXRT_FLEXIO_t *)port_addr == &IMXRT_FLEXIO1_S) {
+	if ((IMXRT_FLEXIO_t *)_port_addr == &IMXRT_FLEXIO1_S) {
 		// FlexIO1... 
 		// need to turn clock off...
 		hardware().clock_gate_register &= ~hardware().clock_gate_mask;
