@@ -26,7 +26,7 @@
  * SOFTWARE.
  */
 
-//#define DEBUG_FlexIO
+// #define DEBUG_FlexIO
 
 #ifndef _FLEX_IO_T4_H_
 #define _FLEX_IO_T4_H_
@@ -35,100 +35,90 @@
 #error "Sorry, Flex IO only works on Teensy 4.x boards"
 #endif
 
+#define FLEX_IO_HAS_FULL_PIN_MAPPING
+
 // forward reference
-class FlexIOHandler; 
+class FlexIOHandler;
 
 class FlexIOHandlerCallback {
-public:
-	virtual bool call_back (FlexIOHandler *pflex) = 0;
+  public:
+    virtual bool call_back(FlexIOHandler *pflex) = 0;
 };
 
-typedef struct {
-    volatile uint32_t *mux;  // we map IO pin to MUX and then compare
-	const uint8_t  flex_pin;
-} FLEXIO_t4_Pins_t;
-
-
-// Note: T4.x Param data does not match RM. 
+// Note: T4.x Param data does not match RM.
 // PARAM:2200808
 class FlexIOHandler {
-public:
-	static const uint8_t CNT_SHIFTERS = 8;
-	static const uint8_t CNT_TIMERS = 8;
-#if defined(ARDUINO_TEENSY41)
-	static const uint8_t CNT_FLEX_PINS = 22;
-	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
-#elif defined(ARDUINO_TEENSY_MICROMOD)
-	static const uint8_t CNT_FLEX_PINS = 15;
-	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
-#else
-	// T4
-	static const uint8_t CNT_FLEX_PINS = 14;
-	static const uint8_t CNT_FLEX_IO_OBJECT = 3;
-#endif
-	typedef struct {
-		volatile uint32_t &clock_gate_register;
-		const uint32_t clock_gate_mask;
-		const IRQ_NUMBER_t  flex_irq;
-		void    (*flex_isr)();
-		const uint8_t  io_pin_mux;  // The pin mux is the same for all of the pins
-		const uint8_t  shifters_dma_channel[CNT_SHIFTERS];
-	} FLEXIO_Hardware_t;
+  public:
+    static const uint8_t CNT_SHIFTERS = 8;
+    static const uint8_t CNT_TIMERS = 8;
+    static const uint8_t CNT_FLEX_IO_OBJECT = 3;
 
-	static const FLEXIO_Hardware_t flex1_hardware;
-	static const FLEXIO_Hardware_t flex2_hardware;
-	static const FLEXIO_Hardware_t flex3_hardware;
+    typedef struct {
+        volatile uint32_t &clock_gate_register;
+        const uint32_t clock_gate_mask;
+        const IRQ_NUMBER_t flex_irq;
+        void (*flex_isr)();
+        const uint8_t io_pin_mux; // The pin mux is the same for all of the pins
+        const uint8_t shifters_dma_channel[CNT_SHIFTERS];
+    } FLEXIO_Hardware_t;
 
-  constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list, uintptr_t pins_list)
-  	: _port_addr(myport), _hardware_addr(myhardware), _callback_list_addr(callback_list), _pins_addr(pins_list)  {
-  }
+    static const FLEXIO_Hardware_t flex1_hardware;
+    static const FLEXIO_Hardware_t flex2_hardware;
+    static const FLEXIO_Hardware_t flex3_hardware;
 
-  	// A static one that can map across all FlexIO controller
+    constexpr FlexIOHandler(uintptr_t myport, uintptr_t myhardware, uintptr_t callback_list, uintptr_t pins_list, uint8_t pin_list_count)
+        : _port_addr(myport), _hardware_addr(myhardware), _callback_list_addr(callback_list), _pins_addr(pins_list),  _pin_list_count(pin_list_count) {
+    }
+
+    // A static one that can map across all FlexIO controller
     static FlexIOHandler *mapIOPinToFlexIOHandler(uint8_t pin, uint8_t &flex_pin);
-	static FlexIOHandler *flexIOHandler_list[3];
+    static FlexIOHandler *flexIOHandler_list[3];
 
     // A simple one that maps within a controller
-  	uint8_t mapIOPinToFlexPin(uint8_t);
+    uint8_t mapIOPinToFlexPin(uint8_t);
 
-	IMXRT_FLEXIO_t & port() { return *(IMXRT_FLEXIO_t *)_port_addr; }
-	const FLEXIO_Hardware_t & hardware() { return *(const FLEXIO_Hardware_t *)_hardware_addr; }
-	const FLEXIO_t4_Pins_t  *pins() { return (const FLEXIO_t4_Pins_t *)_pins_addr; }
-	//uint8_t pinCount() {return *((uint8_t *)_pin_list_count);}
-	int FlexIOIndex();		// return the index of the ojbect 1:->0 2:->1 later 3:->2
+    // Look for IO pin that maps tos specific FlexIO pin
+    uint8_t mapFlexPinToIOPin(uint8_t flex_pin);
 
-	uint8_t requestTimers(uint8_t cnt=1);
-	uint8_t requestShifter(uint8_t not_dma_channel=0xff);
-	uint8_t shiftersDMAChannel(uint8_t n);
-	bool claimTimer(uint8_t timer);
-	bool claimShifter(uint8_t shifter);   
+    IMXRT_FLEXIO_t &port() { return *(IMXRT_FLEXIO_t *)_port_addr; }
+    const FLEXIO_Hardware_t &hardware() { return *(const FLEXIO_Hardware_t *)_hardware_addr; }
+    const volatile uint32_t **pins() { return (const volatile uint32_t **)_pins_addr; }
+    uint8_t pinCount() {return _pin_list_count;}
+    int FlexIOIndex(); // return the index of the ojbect 1:->0 2:->1 later 3:->2
 
-	void freeTimers(uint8_t n, uint8_t cnt=1);
-	void freeShifter(uint8_t n);
+    uint8_t requestTimers(uint8_t cnt = 1);
+    uint8_t requestShifter(uint8_t not_dma_channel = 0xff);
+    uint8_t shiftersDMAChannel(uint8_t n);
+    bool claimTimer(uint8_t timer);
+    bool claimShifter(uint8_t shifter);
 
-	bool setIOPinToFlexMode(uint8_t pin);
-	bool addIOHandlerCallback(FlexIOHandlerCallback *callback);
-	bool removeIOHandlerCallback(FlexIOHandlerCallback *callback);
+    void freeTimers(uint8_t n, uint8_t cnt = 1);
+    void freeShifter(uint8_t n);
 
-	uint32_t computeClockRate();
-	bool usesSameClock(const FlexIOHandler *other);
+    bool setIOPinToFlexMode(uint8_t pin);
+    bool addIOHandlerCallback(FlexIOHandlerCallback *callback);
+    bool removeIOHandlerCallback(FlexIOHandlerCallback *callback);
 
-	void setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf);
+    uint32_t computeClockRate();
+    bool usesSameClock(const FlexIOHandler *other);
 
-	float setClock(float frequency);
-	float setClockUsingAudioPLL(float frequency);
-	float setClockUsingVideoPLL(float frequency);
+    void setClockSettings(uint8_t clk_sel, uint8_t clk_pred, uint8_t clk_podf);
 
-	void IRQHandler(void);
+    float setClock(float frequency);
+    float setClockUsingAudioPLL(float frequency);
+    float setClockUsingVideoPLL(float frequency);
 
-protected: 
-	uintptr_t 			_port_addr;
-	uintptr_t				_hardware_addr;
-	uintptr_t				_callback_list_addr;
-  	uintptr_t				_pins_addr;
-	uint8_t         _used_timers = 0;
-	uint8_t         _used_shifters = 0;
-	bool			_irq_initialized = false;
-  
+    void IRQHandler(void);
+
+  protected:
+    uintptr_t _port_addr;
+    uintptr_t _hardware_addr;
+    uintptr_t _callback_list_addr;
+    uintptr_t _pins_addr;
+    uint8_t _pin_list_count;
+    uint8_t _used_timers = 0;
+    uint8_t _used_shifters = 0;
+    bool _irq_initialized = false;
 };
 
 #endif //_FLEX_IO_T4_H_
