@@ -25,87 +25,80 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <Arduino.h>
 #include "FlexIO_t4.h"
+#include <Arduino.h>
 #ifndef _FLEX_SERIAL_H_
 #define _FLEX_SERIAL_H_
 
+class FlexSerial : public HardwareSerial, public FlexIOHandlerCallback {
+  public:
+    enum { TX_BUFFER_SIZE = 64,
+           RX_BUFFER_SIZE = 40 };
+    FlexSerial(int rxPin = -1, int txPin = -1,
+               uint8_t rx_flex = 0xff, uint8_t rx_timer = 0xff, uint8_t rx_shifter = 0xff,
+               uint8_t tx_flex = 0xff, uint8_t tx_timer = 0xff, uint8_t tx_shifter = 0xff) : _rxPin(rxPin), _txPin(txPin),
+                                                                                             _rx_timer(rx_timer), _rx_shifter(rx_shifter), _tx_timer(tx_timer), _tx_shifter(tx_shifter) {
+        if (rx_flex < (uint8_t)(sizeof(FlexIOHandler::flexIOHandler_list) / sizeof(FlexIOHandler::flexIOHandler_list[0])))
+            _rx_pflex = FlexIOHandler::flexIOHandler_list[rx_flex];
+        if (tx_flex < (uint8_t)(sizeof(FlexIOHandler::flexIOHandler_list) / sizeof(FlexIOHandler::flexIOHandler_list[0])))
+            _tx_pflex = FlexIOHandler::flexIOHandler_list[tx_flex];
+    }
 
+    ~FlexSerial() { end(); }
+    virtual void begin(uint32_t baud, uint16_t format = 0);
+    virtual void end(void);
+    virtual operator bool();
 
-class FlexSerial : public HardwareSerial, public FlexIOHandlerCallback
-{
-public:
-	enum {TX_BUFFER_SIZE=64, RX_BUFFER_SIZE=40};
-	FlexSerial(int rxPin=-1, int txPin=-1, 
-			uint8_t rx_flex=0xff, uint8_t rx_timer=0xff, uint8_t rx_shifter=0xff, 
-			uint8_t tx_flex=0xff, uint8_t tx_timer=0xff, uint8_t tx_shifter=0xff) :
-		_rxPin(rxPin), _txPin(txPin), 
-		_rx_timer(rx_timer), _rx_shifter(rx_shifter), _tx_timer(tx_timer), _tx_shifter(tx_shifter)
-	{
-		if (rx_flex < (uint8_t)(sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0])))
-			_rx_pflex = FlexIOHandler::flexIOHandler_list[rx_flex];
-		if (tx_flex < (uint8_t)(sizeof(FlexIOHandler::flexIOHandler_list)/sizeof(FlexIOHandler::flexIOHandler_list[0])))
-			_tx_pflex = FlexIOHandler::flexIOHandler_list[tx_flex];
-	}	 
-	
+    virtual int available(void);
+    virtual int peek(void);
+    virtual void flush(void);
+    virtual size_t write(uint8_t c);
+    virtual int read(void);
+    using Print::write;
 
-	~FlexSerial() { end(); }
-	virtual void begin(uint32_t baud, uint16_t format=0);
-	virtual void end(void);
-	virtual operator bool();
+    void clear(void);
+    int availableForWrite(void);
 
-	virtual int available(void);
-	virtual int peek(void);
-	virtual void flush(void);
-	virtual size_t write(uint8_t c);
-	virtual int read(void);
-	using Print::write;
+    float setClock(float frequency);
+    float setClockUsingAudioPLL(float frequency);
+    float setClockUsingVideoPLL(float frequency);
 
-	void clear(void);
-	int availableForWrite(void);
+  protected:
+    // Call back from flexIO when ISR hapens
+    virtual bool call_back(FlexIOHandler *pflex);
+    FlexIOHandler *flexIOHandlerTX() { return _tx_pflex; }
+    FlexIOHandler *flexIOHandlerRX() { return _rx_pflex; }
+    void init();
 
-	float setClock(float frequency);
-	float setClockUsingAudioPLL(float frequency);
-	float setClockUsingVideoPLL(float frequency);
+  private:
+    int _rxPin;
+    int _txPin;
 
-protected:
-	// Call back from flexIO when ISR hapens
-	virtual bool call_back (FlexIOHandler *pflex);
-	FlexIOHandler  *flexIOHandlerTX() {return _tx_pflex;}
-	FlexIOHandler  *flexIOHandlerRX() {return _rx_pflex;}
-	void init();
+    // others that get passed through constructor
+    uint8_t _rx_timer;
+    uint8_t _rx_shifter;
 
-private:
-	int _rxPin;
-	int _txPin;
+    uint8_t _tx_timer;
+    uint8_t _tx_shifter;
 
-	// others that get passed through constructor
-	uint8_t 			_rx_timer;
-	uint8_t 			_rx_shifter;
+    // Variables for tranmitter
+    FlexIOHandler *_tx_pflex = nullptr;
 
-	uint8_t 			_tx_timer;
-	uint8_t 			_tx_shifter;
+    uint8_t _tx_flex_pin;
+    uint8_t _tx_shifter_mask;
+    uint8_t _tx_buffer[TX_BUFFER_SIZE];
+    volatile uint16_t _tx_buffer_head = 0;
+    volatile uint16_t _tx_buffer_tail = 0;
+    volatile uint8_t _transmitting = 0;
+    uint8_t _tx_timer_mask = 0;
+    static const uint32_t FLUSH_TIMEOUT = 1000; // 1 second...
 
-	// Variables for tranmitter
-	FlexIOHandler *_tx_pflex = nullptr;
-
-	uint8_t 			_tx_flex_pin;
-	uint8_t 			_tx_shifter_mask;
-	uint8_t				_tx_buffer[TX_BUFFER_SIZE];
-	volatile uint16_t	_tx_buffer_head = 0;
-	volatile uint16_t 	_tx_buffer_tail = 0;
-	volatile uint8_t	_transmitting = 0;
-	uint8_t				_tx_timer_mask = 0;
-	static const uint32_t FLUSH_TIMEOUT = 1000;	// 1 second... 
-
-	// Variables for receiver
-	FlexIOHandler *		_rx_pflex = nullptr;
-	uint8_t 			_rx_flex_pin;
-	uint8_t 			_rx_shifter_mask;
-	uint8_t				_rx_buffer[RX_BUFFER_SIZE];
-	volatile uint16_t	_rx_buffer_head = 0;
-	volatile uint16_t 	_rx_buffer_tail = 0;
-
-
+    // Variables for receiver
+    FlexIOHandler *_rx_pflex = nullptr;
+    uint8_t _rx_flex_pin;
+    uint8_t _rx_shifter_mask;
+    uint8_t _rx_buffer[RX_BUFFER_SIZE];
+    volatile uint16_t _rx_buffer_head = 0;
+    volatile uint16_t _rx_buffer_tail = 0;
 };
 #endif //_FLEX_SERIAL_H_
