@@ -53,7 +53,8 @@ void setup() {
   Serial7.begin(BAUD); outputStr(&Serial7, "Serial", 7);// 28, 29
   for (uint8_t i = 0; i < count_flexSerials; i++) {
     Serial.println("\nFlexSerial object begin");
-    if (!FlexSerials[i].begin(BAUD)) Serial.println("   *** Failed ***\n"); 
+    FlexSerials[i].begin(BAUD);
+    if (!FlexSerials[i]) Serial.println("   *** Failed ***\n");
     streams[7+i] = &FlexSerials[i];
     outputStr(&FlexSerials[i],"FlexSerial", i);
   }
