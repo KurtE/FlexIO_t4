@@ -47,7 +47,7 @@ void setup() {
             }
         }
 
-        Serial.print("\n\tFlex Pin Order: flex:in\n\t\t");
+        Serial.print("\n\tFlex Pin Order: flex:Pin\n\t\t");
         output_count = 0;
         for (flex_pin = 0; flex_pin < pflex->pinCount(); flex_pin++) {
             uint8_t pin = pflex->mapFlexPinToIOPin(flex_pin);
