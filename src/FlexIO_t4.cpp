@@ -48,7 +48,7 @@ FlexIOHandlerCallback *flex3_Handler_callbacks[FlexIOHandler::CNT_TIMERS] = {nul
 //-----------------------------------------------------------------------------
 
 // FlexIO1
-static const volatile uint32_t *flexio_t4_pins_flexio1[] PROGMEM = {
+static const volatile uint32_t * const flexio_t4_pins_flexio1[] PROGMEM = {
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_00, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_01, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_02, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_03, 
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_04, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_05, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_06, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_07, 
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_08, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_09, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_10, &IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_11, 
@@ -62,7 +62,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex1_hardware = {
 };
 
 // FlexIO2
-static const volatile uint32_t * flexio_t4_pins_flexio2[] PROGMEM = {
+static const volatile uint32_t * const flexio_t4_pins_flexio2[] PROGMEM = {
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_01, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_02, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03, 
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_04, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_05, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_06, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_07, 
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_08, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_09, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_10, &IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_11,
@@ -81,7 +81,7 @@ const FlexIOHandler::FLEXIO_Hardware_t FlexIOHandler::flex2_hardware = {
 };
 
 // FlexIO3
-static const volatile uint32_t * flexio_t4_pins_flexio3[] PROGMEM = {
+static const volatile uint32_t * const flexio_t4_pins_flexio3[] PROGMEM = {
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_00, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_01, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_02, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_03, 
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_04, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_05, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_06, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_07, 
     &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_08, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_09, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_10, &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_11, 
